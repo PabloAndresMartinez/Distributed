@@ -1,0 +1,60 @@
+\chapter{Quantum Computing: A brief overview}
+
+In this chapter... \textbf{TODO}
+
+\section{What is Quantum Computing?}
+
+Quantum computing aims to take advantage of quantum mechanics to speed-up computations. There is strong theoretical evidence that quantum computers are capable of solving some problems substantially faster than standard (classical) computers. Well known examples are:
+
+\begin{itemize} 
+  \item Shor's algorithm for \textit{polynomial-time} large number factorisation~\cite{Shor}. There is no known algorithm on classical computers that can perform this task in polynomial time, and it is suspected not to be possible\footnote{RSA, a widely used encryption system, relies its security on the assumption that factorisation of large numbers can not be computed efficiently.}. Quantum computers theoretically provide an exponential speed-up on this task.
+  \item Grover's algorithm for efficient unstructured search~\cite{Grover}. The algorithm performs a brute-force search (i.e.\ requiring no knowledge about the search space) over a \(N\) data-points in time proportional to \(\sqrt{N}\). A brute-force search in a classical computer should always take time proportional to \(N\).
+\end{itemize}
+
+Besides, in May of the present year, Raz and Tal~\cite{BQPSepPH} gave formal proof of the existence of problems that a classical computer may never solve in polynomial time, but are solvable in polynomial time on a quantum one. Nevertheless, all of these results are theoretical in nature and there are some caveats on their practical implementation, discussed in \S~\ref{Caveats}. Giving experimental evidence of this time-efficiency separation between quantum and classical computers is a highly active area of research, known as \textit{quantum supremacy}~\cite{QSupremacySurvey}. The general opinion of the scientific community is that we will eventually overcome these caveats, and take advantage of quantum computing in fields of science such as:
+
+\begin{itemize}
+  \item Chemistry: \textbf{TODO}
+  \item Machine learning: \textbf{TODO}
+  \item Engineering: \textbf{TODO}
+\end{itemize}
+
+For these applications, we will require large scale quantum computers. Due to the obstacles in the way of building a large mainframe quantum computer (see \S~\ref{Caveats}), some authors have advocated the alternative of building a grid of smaller quantum computer units that cooperate in performing an overall computation~\cite{DistributedQCHW}. In this work, particularly in Chapter~\ref{Project}, we contribute to this perspective, providing a method for efficiently distributing any quantum program originally designed for a monolithic quantum computer.
+
+\subsection{The principles of Quantum Computing}
+
+The advantage of using quantum mechanics to perform computations is usually traced down to the following three principles:
+
+\begin{itemize}
+
+  \item \textit{Superposition}: In classical computing, the unit of information is the \textit{bit}, which may take one of two values: \(0\) or \(1\). In quantum computing, the \textit{bit}'s counterpart is the \textit{qubit}, whose value may be \textit{any linear combination} of \(0\) and \(1\), known as a \textit{superposition}, and usually written as: \[\ket{qubit} = \alpha\ket{0} + \beta\ket{1}\] where \(\alpha\) and \(\beta\) are complex numbers that must satisfy: \(\alpha^2 + \beta^2 = 1\).
+
+  A popular analogy of a qubit's superposition is a coin spinning\footnote{Note this is just an analogy, and while a coin spinning can be perfectly modelled using classical physics, a qubit can not. In fact, superposition is key in the (even weirder) two other principles that differentiate quantum and classical computing.
+  }: the classical states (\(0\) and \(1\)) are \textit{heads} and \textit{tails}, but when the coin is spinning, its state is neither of them. If we knew exactly how the coin was set spinning, we would be able to describe the probability distribution of seeing heads or tails when it stops; these would be our \(\alpha^2\) and \(\beta^2\) values. We may \textit{measure} a qubit, and doing so corresponds in our analogy to stopping the coin: we will get either \(0\) or \(1\) as outcome.
+
+  The essential aspect of this analogy is that, before measurement, the \textit{qubit}'s state is neither \(0\) nor \(1\). Through certain operations (that would correspond to altering the axis of spin of the coin), we may change the coefficients \(\alpha\) and \(\beta\) of the superposition. Interestingly, in quantum computing, we encode input and read output (after measurement) as standard classical binary strings, and thus, \textit{for input/output we use as many qubits as bits would be required}. What superposition provides is the ability to -- during mid-computation -- maintain a superposition of all potential solutions to the problem, and update all of them simultaneously with a single operation to the qubits. In some sense, superposition allows us to explore multiple choices/paths of the computation, using only the resources required to explore a single one of those paths.
+
+  \item \textit{Interference}: Superposition gives us the ability to simultaneously explore different paths to solve a problem. However, in the end we will need to measure the qubits -- stop the coins, in order to read heads or tails -- and the result will be intrinsically random. For quantum computing to be any better than a probabilistic classical computer, we require the ability to prune the paths that have led to a dead-end. This is precisely what \textit{interference} provides: some operations on the qubits may make different classical states in the superposition cancel each other out. Interference is at the core of any speed-up achieved by a quantum algorithm, and taking advantage of it is the main challenge when designing quantum algorithms.
+
+  \item \textit{Entanglement}: Quantum mechanics allows us to have a pair of qubits \(a\) and \(b\) in a superposition such as: \[\ket{a,b} = \frac{1}{\sqrt{2}}\ket{0,0} + \frac{1}{\sqrt{2}}\ket{1,1}\] This implies that, when we measure the qubits, we may only read \(a=0, b=0\) or \(a=1, b=1\) as outcome (the coefficients for \(\ket{0,1}\) and \(\ket{1,0}\)) are both \(0\)). Then, what happens if we only measure \(a\)? In this case, we would also know \(b\)'s outcome, without measuring it. More surprisingly, if we measured both \(a\) and \(b\) at the same instant, we would obtain \(a=0, b=0\) half of the times and \(a=1, b=1\) the other half. In short, it seems like acting on one qubit has an instantaneous effect on the other. Whenever a group of qubits exhibits this property, we say they are \textit{entangled}. Entanglement holds regardless how far apart \(a\) is from \(b\); for instance, they could be on two different quantum processing units of a distributed grid. Indeed, entanglement will be key in our discussion of distributed quantum algorithms, and we explain how to use it to perform non-local operations in \S~\ref{NonLocalGates}.
+
+
+\end{itemize}
+
+
+\section{Current hardware implementations}
+
+\subsection{Caveats}
+\label{Caveats}
+Caveats:
+
+number of qubits
+decoherence: the coins can not spin forever. however, superposition is an essential building block for quantum computing!
+error correction
+use of oracles
+
+\section{Programming on Quantum Computers}
+
+
+
+\section{Summary}
