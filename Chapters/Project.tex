@@ -6,7 +6,7 @@
 
 In \S~\ref{IntroDistributing}, we explained the proposal by~\citet{NonLocalCNOT} of how to implent a non-local CNOT. We will now extend their results.
 
-The first thing to notice is that the CNOTs need not immediately follow one on the control qubit. Assuming the circuit uses only the Clifford+T gate-set, all the 1-qubit gates but H can be pushed through the CNOT, and we may transform a circuit so the controls of different CNOTs are indeed together. The way they are pushed through is shown in Figures~\textbf{TODO}. All of these can be checked by calculating the corresponding matrices and seing they match.
+The first thing to notice is that the CNOTs need not immediately follow one on the control qubit. Assuming the circuit uses only the Clifford+T gate-set, all the 1-qubit gates but H can be pushed through the CNOT, and we may transform a circuit so the controls of different CNOTs are indeed together. The way they are pushed through is shown in Figures~\textbf{TODO}. All of these can be checked by calculating the corresponding matrices and seeing they match.
 
 \textbf{TODO}: Figures of how to push gates through control.
 
@@ -18,9 +18,18 @@ Finally, we will be interested in also pushing gates through the target of a CNO
 
 \textbf{TODO}: Derivation of pushing gates through target (playing with Hadamard).
 
+
+
 \section{Finding the best partition}
 
-Intro, what we will do: reduce the problem to HypPart.
+In this section we explain how we search for a suitable partition of the circuit. As discussed in \S~\ref{DQC_Architecture}, we will be interested in achieving the minimal count of required ebits possible, while maintaining a balance of the number of qubits in each block. The problem is very similar to the \((k,\varepsilon\) graph partitioning problem, where a graph partitioning in \(k\) subgraphs has to be found, minimising the number of edges that have their incident vertices in different blocks, and ensuring the number of vertices in each block is within the \(\varepsilon\) tolerance factor: \((1 \pm \varepsilon)\frac{N}{k}\), where \(N\) is the total number of vertices in the graph. Essentially, the qubits of the circuit would become vertices of a graph, whose edges would correspond to each CNOT in the circuit. Whenever an edge is `cut' (i.e.\ its vertices are in different subgraphs), the CNOT it represents would be non-local.
+
+But there is a caveat. If we use graph partitioning naively, we will not be exploiting the fact that multiple CNOTs may be implemented using a single qubit. In what follows, we will explain how to make use of hypergraph partitioning, instead of simple graph partitioning, to account for this aspect. A more detailed review of hypergraph partition is given in Appendix~\ref{chap:HypPart}, here we summarise the key concepts:
+
+\begin{itemize}
+  \item Hypergraphs are the result of extending the definition of graphs to accommodate edges that may have a number of incident vertices other than two. More formally, a hypergraph is a pair of sets \((V,H)\), where \(V\) is the set of vertices and \(H \subseteq 2^V\) is the set of hyperedges. Each hyperedge is represented as the subset of vertices from \(V\) it connects. We will not consider any notion of directionality, i.e.\ all vertices of a hyperedge play the same role.
+  \item Hypergraph partitioning follows the same premise as graph partitioning. The user provides the two parameters \((k,\varepsilon)\), which have the exact same meaning as before, and a hypergraph. What the problem now attempts to minimise is a metric known as \(\lambda\!-\!1\), which is defined as follows: given a partition of the hypergraph, the function \(\lambda\colon H \to \mathbb{N}\) pairs each hyperedge with the number of different blocks its vertices are in. Then, \(\lambda\!-\!1 = \sum_{h \in H} \lambda(h) - 1\) provides a measure of not only how many hyperedges are `cut' but also across how many blocks\footnote{Simply minimising the number of hyperedges `cut' is also an often used approach, but it is not as useful for our problem.}.
+\end{itemize}
 
 \subsection{Vanilla algorithm}
 
