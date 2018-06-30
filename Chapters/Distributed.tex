@@ -1,4 +1,34 @@
 \chapter{Distributed Quantum Computing}
+\label{chap:Distributed}
 
 \section{Architecture}
 \label{DQC_Architecture}
+
+Resources for communication are ebits and classical messages.
+
+Show how to implement an ebit. Say we will represent it as a cup and show the transposing trick on it.
+
+\section{Distributing circuits}
+\label{IntroDistributing}
+
+As we have already explained, we aim to split a given circuit into distributed blocks. The gates that operate over qubits on different blocks are known as \textit{non-local} gates. Given that any circuit can be converted to Clifford+T circuit -- using, for instance, Solovay-Kitaev's algorithm -- The only gate that operates on more than one qubit will be the CNOT. Hence, we only need to understand how CNOTs can executed non-locally, in order to have universal distributed computation.
+
+\textbf{TODO:} A figure with a simple circuit and dashed lines identifying how we want to split it.
+
+The construction we will use is a slight variation of what was proposed by \citet{NonLocalCNOT}, and it is shown in Figures~\textbf{TODO}. In principle, we will use an \textit{ebit} per non-local CNOT. Each half of the ebit is sent to a different block. We will call the block that holds the target qubit (the one with a \(\oplus\)) the `target block' and similarly for the control qubit. 
+
+\textbf{TODO}: showing the overall scheme, with cat-entangler and cat-disentangler as black boxes.
+
+We must first apply what the authors refer to as the \textit{cat-entangler} (Figure~\ref{fig:cat-entangler}), which `copies'\footnote{Note that there is no such thing as `copying' a quantum state (due to the non-cloning theorem). What we mean here by `copying' is generating, from \(\ket{\psi} = \alpha\ket{0} + \beta\ket{1}\), the state \(\ket{\psi} = \alpha\ket{0,0} + \beta\ket{1,1}\) which is fundamentally different from \(\ket{\psi,\psi} = \alpha^2\ket{0,0} + \alpha\beta\ket{0,1} + \alpha\beta\ket{1,0} + \beta^2\ket{1,1}\).} the state of the control qubit into the ebit half in the target block. To do so, the ebit half in the control block is measured (and thus destroyed), and the outcome is used to correct the other half, in the same spirit as in the MBQC model (see \S~\ref{Models}). Notice that the only information physically crossing the boundary between blocks is the \textit{classical} outcome of the measurement (a bit, either \(0\) or \(1\)).
+
+\textbf{TODO}: Show the circuit for the cat-entangler and the resulting state
+
+Then, the CNOT gate may be applied between the ebit half in the target block and the target qubit itself. After it, the \textit{cat-disentangler} must be applied (Figure~\ref{fig:cat-disentangler}), which simply destroys -- with a measurement -- the remaining ebit half and then corrects the control qubit, so the randomness of the measurement is counteracted. Once again, only classical information crosses the boundary.
+
+\textbf{TODO}: Show the circuit for the cat-disentangler and the resulting state
+
+In this way, we have implemented a non-local CNOT gate using one ebit and two classical single bit messages between blocks. However, the true advantage of this approach is attained when multiple non-local CNOTs are implementing using a single ebit. The original paper \citep{NonLocalCNOT} proposed one way of doing this. We will extend it on \S~\ref{NonLocalGates}. What they propose simply consists in realising that, after the cat-entangler is applied, any number of CNOTs that are controlled by the same qubit, and that target different places in a single target block, may all be implemented by using the ebit as control, as shown in Figure~\ref{fig:multipleCNOTs}.
+
+\textbf{TODO}: Show the circuit for many CNOTs, now with cat-entangler and everything
+
+Now, depending of how we choose to partition the code, there will be different groups of CNOTs that we can implement with a single qubit. We will then wish to find the partition that requires the least amount of ebits to implement all of its CNOT gates. This optimization problem is not discussed in the original paper, nor in any other work, as far as we know. It will be our contribution in this thesis, along with an extension of the results just explained, both found in Chapter~\ref{chap:Project}.

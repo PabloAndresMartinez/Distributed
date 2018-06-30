@@ -1,10 +1,13 @@
 !#/bin/bash/
 
-pdflatex thesis.tex
-pdflatex thesis.tex
-pdflatex thesis.tex
+pdflatex thesis
+bibtex thesis
+pdflatex thesis
+pdflatex thesis
 
 rm *.aux
 rm *.toc
 rm *.log
+rm *.bbl
+rm *.blg
 rm Chapters/*aux

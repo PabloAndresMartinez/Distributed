@@ -1,5 +1,35 @@
 \chapter{Towards Distributed Quantum Algorithms}
-\label{Project}
+\label{chap:Project}
 
-\subsection{Non-local operations}
+\section{Implementing non-local CNOTs}
 \label{NonLocalGates}
+
+In \S~\ref{IntroDistributing}, we explained the proposal by~\citet{NonLocalCNOT} of how to implent a non-local CNOT. We will now extend their results.
+
+The first thing to notice is that the CNOTs need not immediately follow one on the control qubit. Assuming the circuit uses only the Clifford+T gate-set, all the 1-qubit gates but H can be pushed through the CNOT, and we may transform a circuit so the controls of different CNOTs are indeed together. The way they are pushed through is shown in Figures~\textbf{TODO}. All of these can be checked by calculating the corresponding matrices and seing they match.
+
+\textbf{TODO}: Figures of how to push gates through control.
+
+The second improvement comes by realising that the trick used to implement multiple CNOTs controlled by the same qubit can also be applied if multiple CNOTs target the same qubit. The derivation is shown in Figure~\ref{CNOTtargetProof}, which uses some of the properties listed in \S~\ref{Models}.
+
+\textbf{TODO}: CNOTtargetProof
+
+Finally, we will be interested in also pushing gates through the target of a CNOT, in order to bunch them up together too. Doing so is slightly more elaborate, and the relevant rules are derived in Figures~\textbf{TODO}.
+
+\textbf{TODO}: Derivation of pushing gates through target (playing with Hadamard).
+
+\section{Finding the best partition}
+
+Intro, what we will do: reduce the problem to HypPart.
+
+\subsection{Vanilla algorithm}
+
+The one where only hyperedges from controlled qubits.
+
+\subsection{Gate pushed extension}
+
+The one where gates are pushed.
+
+\subsection{Both ends are useful extension}
+
+The one where we can also make hyperedges from target qubits.
