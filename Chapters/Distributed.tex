@@ -1,19 +1,46 @@
 \chapter{Distributed Quantum Computing}
 \label{chap:Distributed}
 
-\section{Architecture}
+As we discussed in \S~\ref{Hardware}, there are different approaches on how to build quantum computers. Now that many of these have been experimentally demonstrated, having built small quantum computers, the question of how to scale up is increasingly relevant. This has led to the proposal of distributed architectures~\citep{ArchitectureSurvey}.
+
+\section{Communication through entanglement}
+\label{Ebits}
+
+
+Figure~\ref{fig:ebit} shows how an ebit is prepared. An ebit is a \textit{maximally entangled} pair of qubits, meaning the correlation between the values you measure in both qubits displays the strongest possible correlation. In this case, our ebits are defined as the state \(\frac{1}{\sqrt{2}}\ket{0,0} + \frac{1}{\sqrt{2}}\ket{1,1}\), i.e.\ the value measured on both will \textit{always} match.
+
+\textbf{TODO}: fig:ebit, show the circuit to make an ebit, how it is represented usually as a wire C and its Diract state.
+
+An interesting property of maximally entangled states is that, if a quantum gate given by a symmetric matrix is applied to one of the qubits, it is the same as if the gate was applied to the other qubit (see Figure~\ref{fig:sliding}). In some sense, the gate can `slide' through the entanglement, like beads on a string; as if the entangled state could act as a curved wire, connecting the pair of qubits. Hopefully, this should give an intuition of why ebits can be used to communicate quantum information.
+
+\textbf{TODO}: fig:sliding, show how a H gate can slide through an ebit.
+
+\subsection{Entanglement distillation}
+\label{Distillation}
+
+Sending ebits (maximally entangled states) is much easier than sending an arbitrary state, thanks to the \textit{entanglement distillation} protocol~\citep{DistillationProtocol} which ensures the fidelity of the ebit at its destination up to an arbitrary small error factor.
+
+Non-fidelity. If the ebit is not exactly in a state of the form \(\alpha\ket{0,0} + \beta\ket{1,1}\) (i.e.\ it has a non-zero coefficient for \(\ket{0,1}\) or \(\ket{1,0}\))
+
+\section{An abstract distributed architecture}
 \label{DQC_Architecture}
 
-Resources for communication are ebits and classical messages.
+In classical computing, when we talk about a distributed computer, we imagine a system of independent computing nodes, that can collaborate to perform an overall computation. Communication within a node is fast, but communication across nodes is a potential bottleneck. Hence, we always attempt to minimise the interaction between nodes. A distributed quantum computer would follow the same principles.
 
-Show how to implement an ebit. Say we will represent it as a cup and show the transposing trick on it.
+A distributed quantum computer would be comprised by multiple quantum processing units (QPUs), able to perform any quantum computation on their qubits. Each QPU would have a small number of qubits, which would correspond to their local memory or workspace. In principle, a QPU is not able to access the qubits contained in another: their memory is private. But, in order to collaborate, they must have some way of communicating with each other. This can be done if the two QPUs share an ebit, and the QPUs can send classical bits to each other. In \S~\ref{IntroDistributing}, explain how this resources are used to execute operations across multiple QPUs. 
 
-Explain that we will assume that what is costly is the ebits, and we will also like to have balanced amount of qubits in each block.
+Hence, our distributed quantum architecture would have a subsystem specialised distilling entanglement (as in \S~\ref{Distillation}), so QPUs that need to communicate share a high fidelity ebit. Here there is a compromise between the quality of the ebit -- the quality of the communication channel -- and the time it takes to ensure it. Fortunately, \citet{NoisyChannels} showed that efficient computation using noisy ebits is feasible. Still, the generation of \textit{ebits} remains the main bottleneck of the architecture, and thus we will want to minimise the required ebit count as much as possible.
+
+Authors such as \citet{DistributedQCHW} have discussed the experimental construction of a similar architecture. It is a multicomputer that uses photons for communication across QPUs, entangling stuff.
+
+we will also like to have balanced amount of qubits in each block.
+
+Compare with NUMA architecture.
 
 \section{Distributing circuits}
 \label{IntroDistributing}
 
-As we have already explained, we aim to split a given circuit into distributed blocks. The gates that operate over qubits on different blocks are known as \textit{non-local} gates. Given that any circuit can be converted to Clifford+T circuit -- using, for instance, Solovay-Kitaev's algorithm -- The only gate that operates on more than one qubit will be the CNOT. Hence, we only need to understand how CNOTs can executed non-locally, in order to have universal distributed computation.
+As we have already explained, we aim to split a given circuit into distributed blocks. The gates that operate over qubits on different QPUs are known as \textit{non-local} gates. Given that any circuit can be converted to Clifford+T circuit -- using, for instance, Solovay-Kitaev's algorithm -- The only gate that operates on more than one qubit will be the CNOT. Hence, we only need to understand how CNOTs can executed non-locally, in order to have universal distributed computation.
 
 \textbf{TODO:} A figure with a simple circuit and dashed lines identifying how we want to split it.
 
