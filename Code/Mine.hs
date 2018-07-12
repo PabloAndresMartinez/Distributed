@@ -24,8 +24,28 @@ rmdups (x:xs) = if x `elem` xs' then xs' else (x:xs')
   where
     xs' = rmdups xs
 
+targetOf :: Gate -> Wire
+targetOf gate = case gate of
+  (QGate "not" _ [target] [] _      _) -> error standardError 
+  (QGate "X"   _ [target] [] _      _) -> target
+  (QGate "Y"   _ [target] [] _      _) -> target
+  (QGate "Z"   _ [target] [] _      _) -> target
+  (QGate "S"   _ [target] [] _      _) -> target
+  (QGate "T"   _ [target] [] _      _) -> target
+  (QGate "H"   _ [target] [] _      _) -> target
+  (QGate _     _ _        _  _      _) -> error standardError
+  (QPrep target _)                     -> target
+  (QUnprep target _)                   -> target
+  (QInit _ target _)                   -> target
+  (CInit _ target _)                   -> target
+  (QTerm _ target _)                   -> target
+  (CTerm _ target _)                   -> target
+  (QMeas target)                       -> target
+  (QDiscard target)                    -> target
+  (CDiscard target)                    -> target
+  _                                    -> error standardError
+  where standardError = "DistribHPartError: Gate "++show gate++"was not properly prepocessed."
 
--- ## Extended Quipper fucntions ## --
 cliffordT :: GateBase
 cliffordT = Standard (3*digits) (RandomSource $ mkStdGen 1234)
 
@@ -92,40 +112,54 @@ pullCNOTs :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> (qin -> C
 pullCNOTs circ shape = unencapsulate_generic (x,((arin,theGates',arout,w),ns),y)
   where
     (x,((arin,theGates,arout,w),ns),y) = encapsulate_generic id circ shape
-    theGates' = pullCNOTsRec theGates []
+    theGates' = pullCNOTsRec theGates ([],[[] | _ <- [1..w]])
 
-pullCNOTsRec :: [Gate] -> [Gate] -> [Gate]
-pullCNOTsRec []     past = reverse past
-pullCNOTsRec (g:gs) past = case g of
-  (QGate "not" _ [target] [] [ctrl] _) -> pullCNOTsRec gs $ pull target (from_signed ctrl) past
-  _ -> pullCNOTsRec gs (g:past)
-  where
-    pull t c []     = [g]
-    pull t c (p:ps) = case p of 
-      (QGate "not" _ [t2] [] [c2] _) -> 
-        if t==t2 && c==(from_signed c2)      then ps      -- They cancel out!
-        else if t==(from_signed c2) || c==t2 then blocked -- It's blocked
-        else continue                                     -- It commutes, continue
-      (QGate "not" _ [t2] [] _ _)       -> error standardError
-      (QGate "X"   _ [t2] [] ctrls ncf) -> if c==t2 then (QGate "X" False [t] [] ctrls ncf):continue else continue -- With Paulis, it can continue...  
-      (QGate "Z"   _ [t2] [] ctrls ncf) -> if t==t2 then (QGate "Z" False [c] [] ctrls ncf):continue else continue -- but it leaves a byproduct Pauli
-      (QGate "Y"   _ [t2] [] ctrls ncf) -> 
-        if   t == t2  then (QGate "Z" False [c] [] ctrls ncf):continue 
-        else if c==t2 then (QGate "X" False [t] [] ctrls ncf):continue
-        else continue
-      (QGate "S"   _ [t2] [] _ _)       -> if t==t2 then blocked else continue
-      (QGate "T"   _ [t2] [] _ _)       -> if t==t2 then blocked else continue
-      (QGate "H"   _ [t2] [] _ _)       -> if t==t2 || c==t2 then blocked else continue
-      (QGate _     _ [t2] _  _ _)       -> error standardError
-      (QPrep t2 _)                      -> if t==t2 || c==t2 then blocked else continue
-      (QUnprep t2 _)                    -> if t==t2 || c==t2 then blocked else continue
-      (QInit _ t2 _)                    -> if t==t2 || c==t2 then blocked else continue
-      (CInit _ t2 _)                    -> if t==t2 || c==t2 then blocked else continue
-      _ -> error standardError
-      where
-        blocked  = g:p:ps
-        continue = p:(pull t c ps)
-        standardError = "HypPartError: "++show g++" is not handled when pulling CNOTs."
+-- The second variable, 'past', holds the circuit up to the point that has been read, in reversed order. It has two components,
+--   the first, npast (non-local past) is the earliest part of the circuit, which has already has some CNOTs in it.
+--   the second, lpast (local past) is the later parts comprised by 1-qubit gates, and maintained in a different list per wire.
+pullCNOTsRec :: [Gate] -> ([Gate],[[Gate]]) -> [Gate]
+pullCNOTsRec []     (npast,lpast) = reverse $ (concat lpast) ++ npast
+pullCNOTsRec (g:gs) (npast,lpast) = case g of
+  (QGate "not" _ [target] [] [signedCtrl] _) -> pullCNOTsRec gs $ (npast', updAt ctrl cpast' $ updAt target tpast' $ lpast)
+    where
+      updAt w content list = take w list ++ content : drop (w+1) list
+      ctrl = from_signed signedCtrl
+      (npast', tpast', cpast') = pull target ctrl (npast,lpast !! target,lpast !! ctrl)
+      pull t c (np, tp, (p:cp)) = let 
+        (np',tp',cp') = pull t c (np,tp,cp) -- The resulting past circuit after pushing the CNOT to the end, if it passed through 'p'
+        standardError = "DistribHPartError: "++show g++" is not handled when pulling CNOTs."
+        in case p of                         
+          (QGate "not" _ _ [] _ _)       -> error standardError
+          (QGate "X"   _ _ [] ctrls ncf) -> (np', (QGate "X" False [t] [] ctrls ncf):tp', p:cp') -- Pull through X, leaving an X byproduct
+          (QGate "Z"   _ _ [] ctrls ncf) -> (np', tp', p:cp')                                    -- Pulls through directly
+          (QGate "Y"   _ _ [] ctrls ncf) -> (np', (QGate "X" False [t] [] ctrls ncf):tp', p:cp') -- Pull through Y, leaving an X byproduct
+          (QGate "S"   _ _ [] _ _)       -> (np', tp', p:cp')                                    -- Pulls through directly       
+          (QGate "T"   _ _ [] _ _)       -> (np', tp', p:cp')                                    -- Pulls through directly       
+          (QGate "H"   _ _ [] _ _)       -> pull t c (p:cp++np, tp, [])                            -- Can not be pulled through, flush the remaining gates
+          (QGate _     _ _ _  _ _)       -> error standardError
+          (QPrep _ _)                    -> pull t c (p:cp++np, tp, [])                            -- Can not be pulled through, flush the remaining gates
+          (QInit _ _ _)                  -> pull t c (p:cp++np, tp, [])                            -- Can not be pulled through, flush the remaining gates
+          _ -> error standardError
+      pull t c (np, (p:tp), []) = let 
+        (np',tp',cp') = pull t c (np,tp,[]) -- The resulting 'past' circuit after pushing the CNOT to the end, in case it passed through 'p'
+        standardError = "DistribHPartError: "++show g++" is not handled when pulling CNOTs."
+        in case p of                 
+          (QGate "not" _ _ [] _ _)       -> error standardError
+          (QGate "X"   _ _ [] ctrls ncf) -> (np', p:tp', cp')                                    -- Pull through directly
+          (QGate "Z"   _ _ [] ctrls ncf) -> (np', p:tp', (QGate "Z" False [c] [] ctrls ncf):cp') -- Pull through Z, leaving a Z byproduct
+          (QGate "Y"   _ _ [] ctrls ncf) -> (np', p:tp', (QGate "Z" False [c] [] ctrls ncf):cp') -- Pull through Y, leaving a Z byproduct
+          (QGate "S"   _ _ [] _ _)       -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
+          (QGate "T"   _ _ [] _ _)       -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
+          (QGate "H"   _ _ [] _ _)       -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
+          (QGate _     _ _ _  _ _)       -> error standardError
+          (QPrep _ _)                    -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
+          (QInit _ _ _)                  -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
+          _ -> error standardError     
+      pull _ _ (np, [], []) = (g:np, [], [])   
+  _ -> pullCNOTsRec gs (npast, updLPastAt $ targetOf g) -- If it's a 1-qubit gate, simply add it to the past  
+    where
+      updLPastAt w = take w lpast ++ (g:(lpast !! w)) : drop (w+1) lpast
+
 
 
 -- ## Building the hypergraph ## --
@@ -138,34 +172,16 @@ buildHyp gs (f_pull, f_ends, _) = M.map (\wss -> filter (\(_,ws,_) -> not $ null
 buildHypRec :: [Gate] -> Int -> Bool -> Hypergraph
 buildHypRec []     _ _      = M.empty
 buildHypRec (g:gs) n f_ends = case g of
-  (QGate "not" _ [target] [] [ctrl] _) -> M.alter (addVertex target) (getConnection ctrl) (hypAddHEdge target)
-  (QGate "not" _ [target] [] _      _) -> error standardError         -- Any other case should have been handled by the prepareCircuit
-  (QGate "X"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
-  (QGate "Y"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
-  (QGate "Z"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "S"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "T"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "H"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge *PROVISIONAL* (can be optimised to cancel with target of a CNOT!)
-  (QGate _     _ _        _  _      _) -> error standardError
-  (QPrep _ _)                          -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (QUnprep target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QInit _ _ _)                        -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (CInit _ _ _)                        -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (QTerm _ target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (CTerm _ target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QMeas target)                       -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QDiscard target)                    -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (CDiscard target)                    -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  _ -> error standardError
+  (QGate "not" _ [target] [] [ctrl] _) -> M.alter (addVertex target) (getConnection ctrl) (newHEdgeAt target)
+  _ -> newHEdgeAt $ targetOf g
   where
-    hypAddHEdge target  = M.alter newHEdge target (buildHypRec gs (n+1) f_ends) -- Subsequent controls on 'target' create a new hyperedge (happens when 'target' is affected by H or CNOT)
+    newHEdgeAt target  = M.alter newHEdge target (buildHypRec gs (n+1) f_ends) -- Subsequent controls on 'target' create a new hyperedge (happens when 'target' is affected by H or CNOT)
     newHEdge tV = case tV of Nothing -> Just [(0,[],n)]
                          --    Just [] -> Just ((0,[],n):[]) 
                              Just ((_,ws,i):es) -> Just ((0,[],n):(n+1,ws,i):es)
     addVertex target cV = case cV of Nothing -> Just [(0,[target],n+1)]
                                      Just ((_,ws,i):es) -> Just ((0,target:ws,i):es)
-    getConnection (Signed w s) = if s then w else error $ "HypPartError: Negative control" -- As Clifford+T only allows positive controls
-    standardError = "HypPartError: "++show g++" is not handled. Preprocessing should remove it." 
+    getConnection (Signed w s) = if s then w else error $ "DistribHPartError: Negative control" -- As Clifford+T only allows positive controls
 
 
 -- ## Building the distributed circuit ## --
@@ -251,7 +267,7 @@ distributeCNOTs (g:gs) partition eDic = g' : (distributeCNOTs gs partition eDic)
 separateWires :: (QCData qin, QCData qout) => (qin -> Circ qout) -> Partition -> (qin -> Circ qout)
 separateWires circ partition = \input -> circ $ qcdata_of_endpoints input (organise $ endpoints_of_qcdata input)
   where
-    organise ends = if length ends /= length partition then error $ show ends -- "HypPartError: Different number of inputs than wires partitioned."
+    organise ends = if length ends /= length partition then error $ show ends -- "DistribHPartError: Different number of inputs than wires partitioned."
       else map snd (sortBy (\x y -> compare (fst x) (fst y)) $ zip partition ends)
 -}
 
@@ -263,8 +279,8 @@ epsilon = "0.03"
 -- main = print_generic Preview (decompose_generic Toffoli qft_rev) [qubit,qubit,qubit,qubit]
 main = let 
   mode  = (True,False,False) -- (PullCNOTs,BothEnds,JoinEbits)
-  input = qft_rev
-  shape = [qubit,qubit,qubit,qubit]
+  input = pull2
+  shape = (qubit,qubit,qubit)
   circ  = prepareCircuit input shape mode
   extractedCirc@(_, ((_,theGates,_,nVertices),_), _) = encapsulate_generic id circ shape
   hypergraph = buildHyp theGates mode

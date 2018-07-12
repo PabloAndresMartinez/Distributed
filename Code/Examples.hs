@@ -109,6 +109,21 @@ pull (a,b) = do
   named_gate_at "Z" b
   return (a,b)
 
+pull2 :: (Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit)
+pull2 (a,b,c) = do
+  qnot_at a `controlled` b
+  gate_X_at a
+  qnot_at b `controlled` a
+  gate_H_at b
+  qnot_at a `controlled` b
+  gate_Y_at b
+  qnot_at b `controlled` c
+  gate_H_at b
+  qnot_at c `controlled` b
+  gate_Z_at c
+  qnot_at b `controlled` c
+  return (a,b,c)
+
 cancel :: (Qubit, Qubit) -> Circ (Qubit, Qubit)
 cancel (a,b) = do 
   qnot_at a `controlled` b
