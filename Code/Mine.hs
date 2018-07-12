@@ -272,7 +272,7 @@ main = let
   extractedCirc@(_, ((_,theGates,_,nVertices),_), _) = encapsulate_generic id circ shape
   hypergraph = buildHyp theGates mode
   flatData = concat $ map (\(v,vss) -> map (\(_,vs,_) -> (v+1):(map (+1) vs)) vss) (M.toList hypergraph)
-  fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices] : (rmdups flatData)
+  fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices] : (map rmdups flatData)
   in do
     print_generic Preview circ shape
     writeFile "hypergraph.hgr" $ init fileData -- init to remove last \n
