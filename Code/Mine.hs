@@ -59,16 +59,13 @@ gateInjections _ g = identity_transformer g
 
 -- We need to transform the circuit into single qubit gates or two-qubit gates where one acts as control. The easiest is go to {CNOT,Rot}.
 --   If the boolean flag is True, Pauli gates are pushed through CNOTs
-prepareCircuit :: (QCData qin, QCData qout) => Mode -> (qin -> Circ qout) -> (qin -> Circ qout)
-prepareCircuit (f_pull, _, _) circ = if f_pull then pullCNOTs circ''' else circ'''
+prepareCircuit :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> Mode -> (qin -> Circ qout)
+prepareCircuit circ shape (f_pull,_,_) = circ4
   where
-    circ'   = unbox_recursive (transform_generic swapRemover $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines *PROVISIONAL* 
-    circ''  = \inp -> without_comments $ circ' inp -- Ignore comments
-    circ''' = separateClassicalControl circ''
-
--- Moves
-pullCNOTs :: (QCData qin, QCData qout) => (qin -> Circ qout) -> (qin -> Circ qout)
-pullCNOTs = id
+    circ1   = unbox_recursive (transform_generic swapRemover $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines *PROVISIONAL* 
+    circ2  = \inp -> without_comments $ circ1 inp -- Ignore comments
+    circ3 = separateClassicalControl circ2
+    circ4 = if f_pull then pullCNOTs circ3 shape else circ3
 
 -- Used to prevent the creation of hyperedges when the CNOT is only classically controlled
 --   Separates X/not controlled gates into either X classically controlled or not quantumly controlled
@@ -84,49 +81,81 @@ separateClassicalControl circ = transform_generic separator circ
               quantumCtrls = (isQuantum . from_signed . head) ctrls
               isQuantum e = case e of (Endpoint_Qubit _) -> True; (Endpoint_Bit _) -> False
               in do
-                if quantumCtrls then qnot_at target `controlled` ctrls else gate_X_at target `controlled` ctrls
+                if null ctrls then gate_X_at target else
+                  if quantumCtrls then qnot_at target `controlled` ctrls else gate_X_at target `controlled` ctrls
                 return ([target], [], ctrls) 
       | otherwise = identity_transformer g
     separator g   = identity_transformer g
 
-{-
--- prepareCircuit has to be called on 'circ' before giving it as argument to 'extractGates'
-extractGates :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> ([Gate],Int)
-extractGates circ shape = (theGates, nVertices) 
+-- Used when f_pull flag is active. Moves all CNOTs as much to the beginning as possible
+pullCNOTs :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> (qin -> Circ qout)
+pullCNOTs circ shape = unencapsulate_generic (x,((arin,theGates',arout,w),ns),y)
   where
-    (_,theGates,_,nVertices) = (fst . (\(_,c,_) -> c)) $ encapsulate_generic errMsg circ shape -- Ignore I/O shape, Namespace (i.e. subroutine info) and (inArity, _ , outArity, nWires)
-    errMsg = id -- Do no filtering/formatting of error messages
--}
+    (x,((arin,theGates,arout,w),ns),y) = encapsulate_generic id circ shape
+    theGates' = pullCNOTsRec theGates []
+
+pullCNOTsRec :: [Gate] -> [Gate] -> [Gate]
+pullCNOTsRec []     past = reverse past
+pullCNOTsRec (g:gs) past = case g of
+  (QGate "not" _ [target] [] [ctrl] _) -> pullCNOTsRec gs $ pull target (from_signed ctrl) past
+  _ -> pullCNOTsRec gs (g:past)
+  where
+    pull t c []     = [g]
+    pull t c (p:ps) = case p of 
+      (QGate "not" _ [t2] [] [c2] _) -> 
+        if t==t2 && c==(from_signed c2)      then ps      -- They cancel out!
+        else if t==(from_signed c2) || c==t2 then blocked -- It's blocked
+        else continue                                     -- It commutes, continue
+      (QGate "not" _ [t2] [] _ _)       -> error standardError
+      (QGate "X"   _ [t2] [] ctrls ncf) -> if c==t2 then (QGate "X" False [t] [] ctrls ncf):continue else continue -- With Paulis, it can continue...  
+      (QGate "Z"   _ [t2] [] ctrls ncf) -> if t==t2 then (QGate "Z" False [c] [] ctrls ncf):continue else continue -- but it leaves a byproduct Pauli
+      (QGate "Y"   _ [t2] [] ctrls ncf) -> 
+        if   t == t2  then (QGate "Z" False [c] [] ctrls ncf):continue 
+        else if c==t2 then (QGate "X" False [t] [] ctrls ncf):continue
+        else continue
+      (QGate "S"   _ [t2] [] _ _)       -> if t==t2 then blocked else continue
+      (QGate "T"   _ [t2] [] _ _)       -> if t==t2 then blocked else continue
+      (QGate "H"   _ [t2] [] _ _)       -> if t==t2 || c==t2 then blocked else continue
+      (QGate _     _ [t2] _  _ _)       -> error standardError
+      (QPrep t2 _)                      -> if t==t2 || c==t2 then blocked else continue
+      (QUnprep t2 _)                    -> if t==t2 || c==t2 then blocked else continue
+      (QInit _ t2 _)                    -> if t==t2 || c==t2 then blocked else continue
+      (CInit _ t2 _)                    -> if t==t2 || c==t2 then blocked else continue
+      _ -> error standardError
+      where
+        blocked  = g:p:ps
+        continue = p:(pull t c ps)
+        standardError = "HypPartError: "++show g++" is not handled when pulling CNOTs."
+
 
 -- ## Building the hypergraph ## --
 -- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m) is a hypedge, ws are the other vertices, and (n,m) is the interval of indexes in [Gate] where it is located
 type Hypergraph = M.Map Wire [(Int,[Wire],Int)] 
 
-
 buildHyp :: [Gate] -> Mode -> Hypergraph
-buildHyp gs (_, f_ends, _) = M.map (\wss -> filter (\(_,ws,_) -> not $ null ws) wss) $ buildHypRec gs 0 f_ends
+buildHyp gs (f_pull, f_ends, _) = M.map (\wss -> filter (\(_,ws,_) -> not $ null ws) wss) $ buildHypRec gs 0 f_ends
 
 buildHypRec :: [Gate] -> Int -> Bool -> Hypergraph
 buildHypRec []     _ _      = M.empty
 buildHypRec (g:gs) n f_ends = case g of
-  (QGate "not" _ [target] [] []    _) -> error standardError         -- A 'not' with no controls is just an X gate, but it should never appear like this
-  (QGate "not" _ [target] [] ctrls _) -> foldr (\c h -> M.alter (addVertex target) c h) (hypAddHEdge target) (getConnections ctrls)
-  (QGate "X"   _ [target] [] _     _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
-  (QGate "Y"   _ [target] [] []    _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
-  (QGate "Z"   _ _        [] []    _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "S"   _ _        [] []    _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "T"   _ _        [] []    _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
-  (QGate "H"   _ [target] [] []    _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge *PROVISIONAL* (can be optimised to cancel with target of a CNOT!)
-  (QGate _     _ _        _  _     _) -> error standardError
-  (QPrep _ _)                         -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (QUnprep target _)                  -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QInit _ _ _)                       -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (CInit _ _ _)                       -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
-  (QTerm _ target _)                  -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (CTerm _ target _)                  -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QMeas target)                      -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (QDiscard target)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
-  (CDiscard target)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (QGate "not" _ [target] [] [ctrl] _) -> M.alter (addVertex target) (getConnection ctrl) (hypAddHEdge target)
+  (QGate "not" _ [target] [] _      _) -> error standardError         -- Any other case should have been handled by the prepareCircuit
+  (QGate "X"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
+  (QGate "Y"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge
+  (QGate "Z"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
+  (QGate "S"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
+  (QGate "T"   _ _        [] _      _) -> buildHypRec gs (n+1) f_ends -- Skip, can be pushed through control trivially
+  (QGate "H"   _ [target] [] _      _) -> hypAddHEdge target          -- Prevents next controls on 'target' from joining the previous hyperedge *PROVISIONAL* (can be optimised to cancel with target of a CNOT!)
+  (QGate _     _ _        _  _      _) -> error standardError
+  (QPrep _ _)                          -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
+  (QUnprep target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (QInit _ _ _)                        -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
+  (CInit _ _ _)                        -> buildHypRec gs (n+1) f_ends -- Skip, no effect on the hypergraph
+  (QTerm _ target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (CTerm _ target _)                   -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (QMeas target)                       -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (QDiscard target)                    -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
+  (CDiscard target)                    -> hypAddHEdge target          -- Qubit termination prevents hyperedge joining
   _ -> error standardError
   where
     hypAddHEdge target  = M.alter newHEdge target (buildHypRec gs (n+1) f_ends) -- Subsequent controls on 'target' create a new hyperedge (happens when 'target' is affected by H or CNOT)
@@ -135,42 +164,9 @@ buildHypRec (g:gs) n f_ends = case g of
                              Just ((_,ws,i):es) -> Just ((0,[],n):(n+1,ws,i):es)
     addVertex target cV = case cV of Nothing -> Just [(0,[target],n+1)]
                                      Just ((_,ws,i):es) -> Just ((0,target:ws,i):es)
-    getConnections ctrls = map (\(Signed w s) -> if s then w else error $ "HypPartError: Negative control") ctrls -- Assuming Clifford+T only allows positive controls
+    getConnection (Signed w s) = if s then w else error $ "HypPartError: Negative control" -- As Clifford+T only allows positive controls
     standardError = "HypPartError: "++show g++" is not handled. Preprocessing should remove it." 
 
-{-
-data WireType = AQubit | ABit | Discarded 
-type WireDic  = M.Map Wire WireType
-
--- Ignore classical controls and push Paulis if indicated by the flag
-refactor :: (QCData qin) => [Gate] -> qin -> Bool -> [Gate]
-refactor gs shape = refactorRec gs shapeDic
-  where
-    refactorRec []     _     _       = []
-    refactorRec (g:gs) dic f_pull = case g of
-      (QGate "not" _ [target] [] []    _) -> error standardError  -- A 'not' with no controls is just an X gate, but it should never appear like this
-      (QGate "not" _ [target] [] ctrls _) -> undefined -- Test if controls are classical
-      (QGate "X"   _ [target] [] []    _) -> 
-      (QGate "Y"   _ [target] [] []    _) -> 
-      (QGate "Z"   _ _        [] []    _) -> 
-      (QGate "S"   _ _        [] []    _) -> 
-      (QGate "T"   _ _        [] []    _) -> 
-      (QGate "H"   _ [target] [] []    _) -> 
-      (QGate _     _ _        _  _     _) -> error standardError
-      (QPrep _ _)                         -> 
-      (QUnprep target _)                  -> 
-      (QInit _ _ _)                       -> 
-      (CInit _ _ _)                       -> 
-      (QTerm _ target _)                  -> g : (refactorRec gs (insert target Discarded dic) f_pull)
-      (CTerm _ target _)                  -> g : (refactorRec gs (insert target Discarded dic) f_pull)
-      (QMeas target)                      -> g : (refactorRec gs (insert target ABit dic) f_pull)
-      (QDiscard target)                   -> g : (refactorRec gs (insert target Discarded dic) f_pull)
-      (CDiscard target)                   -> g : (refactorRec gs (insert target Discarded dic) f_pull)
-      _ -> error standardError
-    standardError = "HypPartError: "++show g++" is not handled. Preprocessing should remove it." 
-    shapeDic = M.fromList $ zip [0..] (map ftype $ qcdata_sequentialize shape shape)
-    ftype e = case e of (Endpoint_Qubit _) -> AQubit; (Endpoint_Bit _) -> ABit
--}
 
 -- ## Building the distributed circuit ## --
 type Block = Int
@@ -260,27 +256,33 @@ separateWires circ partition = \input -> circ $ qcdata_of_endpoints input (organ
 -}
 
 -- ## Parameters ## --
-k = "3"
+k = "2"
 epsilon = "0.03"
 
 -- main = main_circuit ASCII Binary (createOracle 3 5 4)
 -- main = print_generic Preview (decompose_generic Toffoli qft_rev) [qubit,qubit,qubit,qubit]
 main = let 
-  mode  = (False,False,False)
-  circ  = prepareCircuit mode classical2
-  shape = (bit,bit,qubit,qubit,qubit)
+  mode  = (True,False,False) -- (PullCNOTs,BothEnds,JoinEbits)
+  input = qft_rev
+  shape = [qubit,qubit,qubit,qubit]
+  circ  = prepareCircuit input shape mode
   extractedCirc@(_, ((_,theGates,_,nVertices),_), _) = encapsulate_generic id circ shape
   hypergraph = buildHyp theGates mode
   flatData = concat $ map (\(v,vss) -> map (\(_,vs,_) -> (v+1):(map (+1) vs)) vss) (M.toList hypergraph)
   fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices] : (map rmdups flatData)
   in do
+    print_generic Preview input shape
     print_generic Preview circ shape
-    writeFile "hypergraph.hgr" $ init fileData -- init to remove last \n
-    HSH.run $ "./KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
-    HSH.run $ "mv hypergraph.hgr.part* partition.hgr" :: IO ()
-    hypPart <- readFile "partition.hgr"
-    let 
-      partition = map read (lines hypPart)
-      newCircuit = buildCircuit partition hypergraph extractedCirc mode
-      in do
-        print_generic Preview newCircuit shape
+    if length flatData == 0 then do
+      writeFile "partition.hgr" $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
+      print_generic Preview circ shape
+    else do
+      writeFile "hypergraph.hgr" $ init fileData -- init to remove last \n
+      HSH.run $ "./KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
+      HSH.run $ "mv hypergraph.hgr.part* partition.hgr" :: IO ()
+      hypPart <- readFile "partition.hgr"
+      let 
+        partition = map read (lines hypPart)
+        newCircuit = buildCircuit partition hypergraph extractedCirc mode
+        in do
+          print_generic Preview newCircuit shape

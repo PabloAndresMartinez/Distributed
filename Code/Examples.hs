@@ -96,8 +96,21 @@ simple3 (a,b,c,d) = do
   qnot_at d `controlled` c
   return (a,b,c,d)
 
-test :: (Qubit, Qubit) -> Circ (Qubit, Qubit)
-test (a,b) = do
+pull :: (Qubit, Qubit) -> Circ (Qubit, Qubit)
+pull (a,b) = do
+  qnot_at b `controlled` a
   named_gate_at "X" a
   named_gate_at "Z" b
+  qnot_at b `controlled` a
+  named_gate_at "X" a
+  named_gate_at "Z" b
+  qnot_at a `controlled` b
+  named_gate_at "X" a
+  named_gate_at "Z" b
+  return (a,b)
+
+cancel :: (Qubit, Qubit) -> Circ (Qubit, Qubit)
+cancel (a,b) = do 
+  qnot_at a `controlled` b
+  qnot_at a `controlled` b
   return (a,b)
