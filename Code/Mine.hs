@@ -279,8 +279,8 @@ epsilon = "0.03"
 -- main = print_generic Preview (decompose_generic Toffoli qft_rev) [qubit,qubit,qubit,qubit]
 main = let 
   mode  = (True,False,False) -- (PullCNOTs,BothEnds,JoinEbits)
-  input = pull2
-  shape = (qubit,qubit,qubit)
+  input = qft_rev
+  shape = [qubit,qubit,qubit]
   circ  = prepareCircuit input shape mode
   extractedCirc@(_, ((_,theGates,_,nVertices),_), _) = encapsulate_generic id circ shape
   hypergraph = buildHyp theGates mode
@@ -288,6 +288,7 @@ main = let
   fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices] : (map rmdups flatData)
   in do
     print_generic Preview input shape
+    print_generic Preview (prepareCircuit input shape (False,False,False)) shape
     print_generic Preview circ shape
     if length flatData == 0 then do
       writeFile "partition.hgr" $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
