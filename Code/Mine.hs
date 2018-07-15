@@ -167,52 +167,62 @@ pullCNOTsRec (g:gs) (npast,lpast) = case g of
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CNOT, 
 --   (n,m) is the interval of indexes in [Gate] where it is located,
 --   b==Control indicates the key is control (· dot), otherwise the key is target (+ dot)
-type Hypergraph = M.Map Wire [(Int,[(Wire,Int)],Int,HType)] 
-data HType = Control | Target | Dummy deriving Eq, Ord, Show
+type Hypergraph = M.Map Wire [(Int,[(Wire,Int)],Int,HedgeType)]
+data HedgeType = Control | Target | Unknown deriving (Eq, Ord, Show)
 
 buildHyp :: [Gate] -> Int -> Mode -> Hypergraph
 buildHyp gs n (_, f_ends, _) = hyp4
   where
     hyp  = buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
-    hyp2 = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
-    hyp3 = if not f_ends then M.map (filter (\(_,_,_,ht) -> ht)) hyp2 -- If vanilla mode, remove all hyperedges with of 'target' type
-    hyp4 = M.map (map (\(_,ws,_,_) -> map (\(w,p) -> (n-w,p)) ws)) hyp -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
+    hyp2 = if f_ends then hyp else M.map unpackTargets hyp -- If vanilla mode, remove all hyperedges with of 'target' type WRONG!!
+    hyp3 = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp2 -- Remove all singleton (unconnected) hyperedges
+    hyp4 = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (n-w-1,p)) ws,o,ht))) hyp3 -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
+    unpackTargets []             = []
+    unpackTargets (h@(i,ws,o,ht):hs) = h' ++ (unpackTargets hs)
+      where
+        h' = if ht==Control then [h] else
+          map (\w -> (i,[w],o,ht)) ws
 
 buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
 buildHypRec []     _ _    = M.empty
 buildHypRec (g:gs) n cnot = case g of
   (QGate "not" _ [target] [] [signedCtrl] _) -> newCNOTAt control target
+    where
+      newCNOTAt ctrl target = M.alter (newCNOT Target cnot) target $ M.alter (newCNOT Control cnot) ctrl $ buildHypRec gs (n+1) (cnot-1)
+      newCNOT hType cnot v = case v of Nothing -> Just [(nan,[(cnot-1,n)],n+1,hType)] -- n+1 because it finishes AFTER this gate
+                                       Just ((_,ws,o,ht):es) -> 
+                                          if ht==hType then Just ((nan,(cnot-1,n):ws,o,ht):es) -- Add the cnot to the hyperedge, as they are of the same type
+                                          else Just ((nan,[(cnot-1,n)],n+1,hType):(n+1,ws,o,ht):es) -- The previous hyperedge was of the other type, so close it and create a new hyperedge
+      nan = 0
+      control = getWire signedCtrl
+      getWire (Signed w s) = if s then w else error $ "DistribHPartError: Negative control" -- As Clifford+T only allows positive controls
   _ -> newHEdgeAt $ targetOf g
-  where
-    newHEdgeAt wire  = M.alter newHEdge wire $ buildHypRec gs (n+1) cnot -- Subsequent CNOTs on 'wire' create a new hyperedge
-    newCNOTAt ctrl target = M.alter (newCNOT Target cnot) target $ M.alter (newCNOT Control cnot) ctrl $ buildHypRec gs (n+1) (cnot-1)
-    newHEdge v = case v of Nothing -> Just [(nan,[],n,Dummy)]
-                           Just ((_,ws,i,ht):es) -> Just ((nan,[],n,Dummy):(n+1,ws,i,ht):es)
-    newCNOT hType cnot v = case v of Nothing -> Just [(nan,[(cnot-1,n)],n+1,hType)] -- n+1 because it finishes AFTER this gate
-                                     Just ((_,ws,i,ht):es) -> 
-                                        if ht==hType then Just ((nan,(cnot-1,n):ws,i,ht):es) -- Add the cnot to the hyperedge, as they are of the same type
-                                        else Just ((nan,[(cnot-1,n)],n+1,hType):(n+1,ws,i,ht):es) -- The previous hyperedge was of the other type, so close it and create a new hyperedge
-    nan = 0
-    control = getWire signedCtrl
-    getWire (Signed w s) = if s then w else error $ "DistribHPartError: Negative control" -- As Clifford+T only allows positive controls
+    where
+      newHEdgeAt wire  = M.alter newHEdge wire $ buildHypRec gs (n+1) cnot -- Subsequent CNOTs on 'wire' create a new hyperedge
+      newHEdge v = case v of Nothing -> Just [(nan,[],n,Unknown)]
+                             Just ((_,ws,o,ht):es) -> Just ((nan,[],n,Unknown):(n+1,ws,o,ht):es)
+      nan = 0
 
-hypToString :: Hypergraph -> String
-hypToString hyp = init fileData -- init to remove last \n
+hypToString :: Hypergraph -> Int -> String
+hypToString hyp n = init fileData -- init to remove last \n
   where    
-    flatData = concat $ map (\(v,vss) -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss) (M.toList hyp')
-    fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices] : (map rmdups flatData)
+    flatData = concat $ map (\(v,vss) -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss) (M.toList hyp)
+    fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices, 10] : (map rmdups flatData) ++ verticesWeights
+    verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]
     nVertices = foldr (max . foldr max 0) 0 flatData
 
 -- ## Building the distributed circuit ## --
 type Block = Int
 type Partition = [Block] -- (partition, eDic)- The wire 'w' is in the block given by: b := (partition !! w). 
-type EDic = M.Map (Wire,Block,HType) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
-data EbitComponent = Entangler (Wire,Block,HType) Int | Disentangler (Wire,Block,HType) Int deriving Show -- (Dis)Entangler (ctrl,btarget,hType) pos
+type EDic = M.Map (Wire,Block,HedgeType) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
+data EbitComponent = Entangler (Wire,Block,HedgeType) Int | Disentangler (Wire,Block,HedgeType) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
 
 instance Ord EbitComponent where
-  compare c1 c2 = case compare (pos c1) (pos c2) of -- Earlier position goes first
+  compare c1 c2 = case compare (pos c1) (pos c2) of
     LT -> LT; GT -> GT
-    EQ -> compare (isEntangler c1) (isEntangler c2) -- If equal position, Disentangler goes first
+    EQ -> case compare (isEntangler c1) (isEntangler c2) of
+      LT -> LT; GT -> GT
+      EQ -> compare (getConnections c1) (getConnections c2)
 
 isEntangler :: EbitComponent -> Bool
 isEntangler (Entangler    _ _) = True
@@ -222,15 +232,14 @@ pos :: EbitComponent -> Int
 pos (Entangler    _ n) = n
 pos (Disentangler _ n) = n
 
-getConnections :: EbitComponent -> (Wire,Block,HType)
+getConnections :: EbitComponent -> (Wire,Block,HedgeType)
 getConnections (Entangler    ws _) = ws
 getConnections (Disentangler ws _) = ws
 
-buildCircuit :: (QCData qin, QCData qout) => Partition -> Hypergraph -> (qin, BCircuit, qout) -> Mode -> (qin -> Circ qout)
-buildCircuit partition hgraph oldCirc mode = unencapsulate_generic newCirc
+buildCircuit :: (QCData qin, QCData qout) => Partition -> Hypergraph -> (qin, BCircuit, qout) -> (qin -> Circ qout)
+buildCircuit partition hgraph oldCirc = unencapsulate_generic newCirc
   where
     (inp,((ar1,gates,ar2,n),namespace),out) = oldCirc
-    -- (eDic,gates',nE) = allocateEbits gates partition hgraph -- REMOVE (it's here for debugging)
     (gates',nE) = distribute gates partition hgraph
     newCirc = (inp,((ar1,gates',ar2,n+nE),namespace),out)
 
@@ -240,7 +249,7 @@ distribute gates partition hypergraph = (allocateEbits components (distributeCNO
     cnots = nonLocalCNOTs gates partition hypergraph
     components = ebitInfo partition hypergraph
     (nE,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
-    addToDic (Entangler key _) (w,dic) = if key `member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- We add to the dictionary only if wires can not be reused
+    addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- We add to the dictionary only if wires can not be reused
 
 -- Note: The order how the components are added is essential. It must be from the end to the beginning.
 allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> [Gate]
@@ -266,24 +275,23 @@ ebitInfo partition hypergraph = sort $ disentanglers ++ entanglers
   where
     entanglers    = map (\(n,c,b,_,ht) -> Entangler    (c,b,ht) n) eInfo
     disentanglers = map (\(_,c,b,n,ht) -> Disentangler (c,b,ht) n) eInfo
-    eInfo    = (filter external . rmdups) $ map (\(i,c,v,o,ht) -> (i,c,partition !! v,o,ht)) flatInfo -- Note: remove internal edges and duplicates (i.e. CNOT edges that can be implemented by the same eBit)
+    eInfo    = (filter external . rmdups) $ map (\(i,c,(w,p),o,ht) -> (i,c,partition !! w,o,ht)) flatInfo -- Note: remove internal edges and duplicates (i.e. CNOT edges that can be implemented by the same eBit)
     flatInfo = (concat . concat) $ map (\(c,vss) -> map (\(i,vs,o,ht) -> map (\v -> (i,c,v,o,ht)) vs) vss) (M.toList hypergraph)
-    external (_,c,b,_) = partition !! c /= b
+    external (_,c,b,_,_) = partition !! c /= b
 
-nonLocalCNOTs :: [Gate] -> Partition -> Hypergraph -> [(Wire,Wire,Int,HType)]
-nonLocalCNOTs gs part hyp = filter (\(src,snk,_,_) -> partition !! src /= partition !! snk) cnots
+nonLocalCNOTs :: [Gate] -> Partition -> Hypergraph -> [(Wire,Wire,Int,HedgeType)]
+nonLocalCNOTs gs partition hyp = filter (\(src,snk,_,_) -> partition !! src /= partition !! snk) cnots
   where
     hedges = concat $ map (\(v,vss) -> map (\(_,ws,_,ht) -> (v,ws,ht)) vss) (M.toList hyp)
     cnots  = concat $ map (\(v,ws,ht) -> map (\(w,p) -> (v,w,p,ht)) ws) hedges 
 
-distributeCNOTs :: [(Wire,Wire,Int,HType)] -> [Gate] -> Partition -> EDic -> [Gate]
-distributeCNOTs []     gs _    = gs
-distributeCNOTs (c:cs) gs eDic = distributeCNOTs cs gs' eDic
+distributeCNOTs :: [(Wire,Wire,Int,HedgeType)] -> [Gate] -> Partition -> EDic -> [Gate]
+distributeCNOTs []     gs partition _    = gs
+distributeCNOTs (c:cs) gs partition eDic = distributeCNOTs cs gs' partition eDic
   where
-    gs' = take pos gs ++ [g'] ++ drop pos gs
+    gs' = take pos gs ++ [g'] ++ drop (pos+1) gs
     g' = case (gs !! pos) of
-      (QGate "not" rev [target] [] [Signed ctrl True] ncf)
-        if ht==Control 
+      (QGate "not" rev [target] [] [Signed ctrl True] ncf) -> if ht==Control 
         then QGate "not" rev [target] [] [Signed ebit True] ncf
         else QGate "not" rev [ebit]   [] [Signed ctrl True] ncf
       _ -> error "DistribHPartError: Failure when distributing CNOTs"
@@ -298,26 +306,27 @@ epsilon = "0.03"
 -- main = main_circuit ASCII Binary (createOracle 3 5 4)
 -- main = print_generic Preview (decompose_generic Toffoli qft_rev) [qubit,qubit,qubit,qubit]
 main = let 
-  mode  = (True,False,False) -- (PullCNOTs,BothEnds,JoinEbits)
-  input = qft_rev
-  shape = [qubit,qubit,qubit]
+  mode  = (False,False,False) -- (PullCNOTs,BothEnds,JoinEbits)
+  input = interesting
+  shape = (qubit,qubit,qubit,qubit)
   circ  = prepareCircuit input shape mode
   extractedCirc@(_, ((_,theGates,_,nVertices),_), _) = encapsulate_generic id circ shape
   hypergraph = buildHyp theGates nVertices mode
+  fileData = hypToString hypergraph nVertices
   in do
-    print_generic Preview input shape
-    print_generic Preview (prepareCircuit input shape (False,False,False)) shape
+    -- print_generic Preview input shape
+    -- print_generic Preview (prepareCircuit input shape (False,False,False)) shape
     print_generic Preview circ shape
-    if length flatData == 0 then do
+    if head fileData == '0' then do
       writeFile "partition.hgr" $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
       print_generic Preview circ shape
     else do
-      writeFile "hypergraph.hgr" $ hypToString hypergraph
+      writeFile "hypergraph.hgr" $ fileData
       HSH.run $ "./KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
       HSH.run $ "mv hypergraph.hgr.part* partition.hgr" :: IO ()
       hypPart <- readFile "partition.hgr"
       let 
         partition = map read (lines hypPart)
-        newCircuit = buildCircuit partition hypergraph extractedCirc mode
+        newCircuit = buildCircuit partition hypergraph extractedCirc
         in do
           print_generic Preview newCircuit shape

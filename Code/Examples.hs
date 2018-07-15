@@ -124,8 +124,16 @@ pull2 (a,b,c) = do
   qnot_at b `controlled` c
   return (a,b,c)
 
-cancel :: (Qubit, Qubit) -> Circ (Qubit, Qubit)
-cancel (a,b) = do 
-  qnot_at a `controlled` b
-  qnot_at a `controlled` b
-  return (a,b)
+interesting :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
+interesting (a,b,c,d) = do
+  qnot_at d `controlled` a
+  gate_S_at a
+  gate_Y_at d
+  qnot_at b `controlled` a 
+  qnot_at d `controlled` c
+  gate_H_at a
+  qnot_at d `controlled` b
+  qnot_at c `controlled` a
+  gate_Z_at a
+  qnot_at d `controlled` a
+  return (a,b,c,d)
