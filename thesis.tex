@@ -61,8 +61,16 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{listings}
-\usepackage{color}
+\usepackage{xcolor}
 \usepackage{verbatim}
+\usepackage{geometry}
+\usepackage{marginnote}
+\usepackage{ragged2e}
+\usepackage{mdframed}
+
+\reversemarginpar
+
+\captionsetup{font=small,labelfont=bf}
 
 \newcounter{nalg}[chapter] % defines algorithm counter for chapter-level
 \renewcommand{\thenalg}{\thechapter .\arabic{nalg}} %defines appearance of the algorithm counter
@@ -73,6 +81,8 @@
     \refstepcounter{nalg} %increments algorithm number
     \captionsetup{labelformat=algocaption,labelsep=colon} %defines the caption setup for: it ises label format as the declared caption label above and makes label and caption text to be separated by a ':'
     \lstset{ %this is the stype
+        float,
+        floatplacement=H,
         mathescape=true,
         frame=tB,
         numbers=left, 
