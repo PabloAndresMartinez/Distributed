@@ -62,11 +62,16 @@
 \usepackage{amssymb}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{colortbl}
 \usepackage{verbatim}
 \usepackage{geometry}
 \usepackage{marginnote}
 \usepackage{ragged2e}
 \usepackage{mdframed}
+\usepackage{pgfplots}
+\usepackage{pifont}
+\usepackage{multirow}
+\usepackage{makecell}
 
 \reversemarginpar
 
@@ -75,6 +80,8 @@
 \newcounter{nalg}[chapter] % defines algorithm counter for chapter-level
 \renewcommand{\thenalg}{\thechapter .\arabic{nalg}} %defines appearance of the algorithm counter
 \DeclareCaptionLabelFormat{algocaption}{Algorithm \thenalg} % defines a new caption label as Algorithm x.y
+
+\newcommand{\cmark}{\ding{51}}%
 
 \lstnewenvironment{algorithm}[1][] %defines the algorithm listing environment
 {   
