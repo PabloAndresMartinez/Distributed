@@ -1,0 +1,15 @@
+\tikzset{
+  pics/box/.style args={#1/#2}{
+    code = {
+      \node[rectangle, fill=black, opacity=0.2, minimum height=#1, minimum width=#2] {};
+    }
+  },
+  pics/ebit/.style args={#1/#2/#3}{
+    code = {
+      \node[name prefix .., below left=#2 and -#3 of circuit.north west, rectangle, fill=white, minimum height=10mm, minimum width=#3] (#1clear) {};
+      \coordinate[below left=1.5mm and 0mm of clear.north east] (one);
+      \coordinate[below=7.04mm of one] (two);
+      \draw[name prefix ..] (#1one) edge[out=180,in=180,looseness=1.5] (#1two);
+    }
+  },
+}
