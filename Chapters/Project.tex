@@ -86,12 +86,12 @@ We then solve the hypergraph partitioning problem (see Appendix~\ref{chap:HypPar
 \begin{itemize}
 
   \item The way the vertices are assigned in the blocks dictates how the corresponding wires are allocated to the different QPUs. 
-  \item Whenever a hyperedge has all of its vertices in the same QPU (i.e.\ it is not cut), all the CNOT gates it represents are implemented locally in that QPU, so no ebit is required (Figure~\ref{fig:vanillaCuts}a). 
-  \item If a hyperedge is cut once, some of the wires targeted by the CNOTs will appear in the same QPU as the control wire, so those CNOTs will be implemented locally. The rest of the target wires will be in a different QPU, so the corresponding CNOTs will have to be implemented non-locally, all using the same ebit (Figure~\ref{fig:vanillaCuts}b). 
-  \item In the case a hyperedge is cut more than once -- its vertices are split among more than two blocks -- we will proceed in the same manner, but now we will require multiple ebits (Figure~\ref{fig:vanillaCuts}c). As we previously defined, the function \(\lambda\colon H \to \mathbb{N}\) tells us how many blocks a cut hyperedge connects. In order to connect \(\lambda(h)\) blocks, we need at least \(\lambda(h)-1\) block-to-block connections: \(\lambda(h)-1\) ebits. The first halves of all of the ebits is kept by the QPU with the controlling wire, while the rest of the QPUs receive a single half each. This is why the metric we will need our hypergraph partitioner to minimise is \(\lambda-1\).
+  \item Whenever a hyperedge has all of its vertices in the same QPU (i.e.\ it is not cut), all the CNOT gates it represents are implemented locally in that QPU, so no ebit is required. 
+  \item If a hyperedge is cut once, some of the wires targeted by the CNOTs will appear in the same QPU as the control wire, so those CNOTs will be implemented locally. The rest of the target wires will be in a different QPU, so the corresponding CNOTs will have to be implemented non-locally, all using the same ebit (Figure~\ref{fig:vanillaCuts}a). 
+  \item In the case a hyperedge is cut more than once -- its vertices are split among more than two blocks -- we will proceed in the same manner, but now we will require multiple ebits (Figure~\ref{fig:vanillaCuts}b). As we previously defined, the function \(\lambda\colon H \to \mathbb{N}\) tells us how many blocks a cut hyperedge connects. In order to connect \(\lambda(h)\) blocks, we need at least \(\lambda(h)-1\) block-to-block connections: \(\lambda(h)-1\) ebits. The first halves of all of the ebits is kept by the QPU with the controlling wire, while the rest of the QPUs receive a single half each. This is why the metric we will need our hypergraph partitioner to minimise is \(\lambda-1\).
 \end{itemize}
 
-\textbf{TODO} Figure showing the different cases from the paragraph above, a, b and c. Give both the original circuit, the hypergraph and the black boxed distributed circuit (fig:vanillaCuts)
+\textbf{TODO} Figure showing the different cases from the paragraph above, a and b. Give both the original circuit with dashed splits, the hypergraph and the black boxed distributed circuit (fig:vanillaCuts)
 
 
 Following this intepretation of the hypergraph partition, we transform the original circuit to obtain its distributed version. To do so, for each cut hyperedge \(h\), we insert \(\lambda(h)-1\) cat-entanglers just before the group of CNOT gates it represents; and \(\lambda(h)-1\) cat-disentanglers right after them. Then, each of the CNOTs that have to be implemented non-locally are modified so their control wire is the corresponding QPU's local ebit half, while the target is unchanged.
@@ -206,9 +206,7 @@ We now explain how the hypergraph partition determines the distribution of the c
   \item The block where a CNOT-vertex is assigned dictates in which QPU the CNOT operation itself is carried out. As we discussed in \S\ref{NonLocalGates}, if the non-local CNOT is implemented using the common-control method, the CNOT is applied in the target QPU, and vice versa. Hence, the block where the CNOT-vertex is assigned indicates the method that should be used to implement it. 
 \end{itemize}
 
-An example is shown in Figure~\ref{fig:BothEndsDistrib}. Notice that the ebit required to implement each of the non-local CNOTs is guaranteed to exist as, by construction (Algorithm~\ref{code:buildHypBothEnds}), each CNOT-vertex is always connected to exactly two wire-vertices, corresponding to its control and target wires. Whenever these three vertices are not assigned to the same QPUs, a hyperedge will be cut, and the required ebit will be generated.
-
-\textbf{TODO}: Simple example of building step by step the previous hypergraph (fig:BothEndsDistrib)
+An example is shown in Figure~\ref{fig:modes}. Notice that the ebit required to implement each of the non-local CNOTs is guaranteed to exist as, by construction (Algorithm~\ref{code:buildHypBothEnds}), each CNOT-vertex is always connected to exactly two wire-vertices, corresponding to its control and target wires. Whenever these three vertices are not assigned to the same QPUs, a hyperedge will be cut, and the required ebit will be generated.
 
 \begin{mdframed}[backgroundcolor=gray!20,leftmargin=20pt,rightmargin=20pt, innerbottommargin=10pt] 
 \small
@@ -225,7 +223,7 @@ Under this interpretation it is apparent that the problem of efficiently distrib
 
 It is interesting to discuss the particular case in Figure~\ref{fig:farCNOT}. Here, a CNOT gate that must be applied non-locally between QPU \(1\) and QPU \(2\), ends up having its local fragment -- the CNOT-vertex, and thus the CNOT gate itself --  in neither of them, but in a distant QPU \(3\). This happens whenever QPU \(1\) and QPU \(2\) do not share the necessary ebit, but they are both sharing a suitable ebit with QPU \(3\). Intuitively, it can be seen as passing a message through a middle-man; sometimes, using communication through an already available middle-man is better than putting up a full blown connection just for a single message. The hypergraph partitioner acting on the hypergraph built by Algorithm~\ref{code:buildHypBothEnds} will automatically use this strategy whenever it reduces the number of ebits required. Notice, however, that this trick only allows to implement a single CNOT with both target and control wires in some particular QPUs. When the CNOT shares one of its wires with multiple CNOTs, it will often be best to use the common-control or common-target method to implement all of them together. This trick will be useful whenever there are stray CNOT gates that can not be efficiently grouped with other CNOTs.
 
-\textbf{TODO}: The case where a non-local CNOT is actually applied in neither of the QPUs at its ends (fig:farCNOT)
+\textbf{TODO}: The case where a non-local CNOT is actually applied in neither of the QPUs at its ends, the circuit is the 3CNOT example from BothEndsSimple, split in three (fig:farCNOT)
 
 In any case, some criticism must be considered here: if we put no constraint on the exploitation of `middle-men' QPUs, it may happen that communication across many of the QPUs all use the same middle-man QPU to deliver their messages, potentially creating a bottle neck. We see two ways around this:
 
@@ -244,9 +242,9 @@ As a wrap up of this section, in Figure~\ref{fig:modes} we show the same circuit
 
 \section{Interchanging CNOT gates}
 
-CNOT gates trivially commute when they are applied to different wires. When one of the wires is in common, if it has the same role (control or target) for both CNOTs, we can take advantage of it and implement them using a single ebit, as we just described. If both wires are in common and have the same role, the CNOTs cancel each other. But what happens if two CNOTs act on the same wire with different roles? In that case, we can still interchange the gates as in Figures~\textbf{TODO}, but that creates additional CNOTs.
+CNOT gates trivially commute when they are applied to different wires. When one of the wires is in common, if it has the same role (control or target) for both CNOTs, we can take advantage of it and implement them using a single ebit, as we just described. If both wires are in common and have the same role, the CNOTs cancel each other. But what happens if two CNOTs act on the same wire with different roles? In that case, we can still interchange the gates as in Figure~\textbf{TODO}, but that creates an additional CNOT per interchange.
 
-\textbf{TODO}: Interchange challenge (picture from phone) (fig:interchangeChallenge)
+\textbf{TODO}: Interchange challenge, only the two circuits with the dashed split and their respective hypergraphs (fig:interchangeChallenge)
 
 It may seem like preprocessing the circuit so it has the minimum possible number of CNOT gates would always be the best option for partitioning. However, this is not always true, as shown in Figure~\ref{fig:interchangeChallenge}. In some cases interchanging CNOTs may unlock a more efficient partitioning of the circuit, regardless of it adding more CNOTs. In other cases, it will have no benefit, and add an extra CNOT to take into account when partitioning. This compromise prevents us from knowing a priori the best choice. Providing the hypergraph partitioner with the flexibility of deciding either to interchange a particular pair of CNOTs or not -- in the same spirit we did in \S\ref{BothEnds} -- would be the best solution. However, encoding such a choice in a hypergraph partitioning problem is very difficult, due to the following reasons:
 
