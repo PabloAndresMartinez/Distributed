@@ -6,14 +6,13 @@
 
 In \S\ref{IntroDistributing}, we explained the proposal by~\citet{NonLocalCNOT} of how to implement a non-local gate. We will now extend their results.
 
-In the original work, in order to implement multiple non-local gates using a single ebit, there must not be any operation on the control qubit between the non-local gates. However, many of the 1-qubit gates from the Clifford+T set commute with the CNOT gate. This means that, if there are operations in between CNOTs, we may transform the circuit to an equivalent version where the CNOT gates are brought together. And although some of the gates do not commute with CNOT, in some cases they can still be interchanged with it if an additional 1-qubit gate is added. All of the relevant circuit transformations are shown in Figures~\textbf{TODO}. These can be checked by calculating the corresponding matrices of both sides and verifying they match.
+In the original work, in order to implement multiple non-local gates using a single ebit, there must not be any operation on the control qubit between the non-local gates. However, many of the 1-qubit gates from the Clifford+T set commute with the CNOT gate. This means that, if there are operations in between CNOTs, we may transform the circuit to an equivalent version where the CNOT gates are brought together. And although some of the gates do not commute with CNOT, in some cases they can still be interchanged with it if an additional 1-qubit gate is added. All of the relevant circuit transformations are shown in Figure~\ref{fig:pullRules}. These can be checked by calculating the corresponding matrices of both sides and verifying they match.
 
-\textbf{TODO}: Figures of how to push gates through both control and target
+\input{Figures/PullRules}
 
 The second improvement comes by realising that the method used to implement multiple CNOT gates controlled by the same wire (explained in \S\ref{IntroDistributing}) can also be applied if multiple CNOT have a common target qubit instead. We will refer to the former method as the \textit{common-control} method and \textit{common-target} for the latter. The derivation of the common-target method is shown in Figure~\ref{fig:CNOTtargetProof}, which uses some of the properties listed in \S\ref{Models}. The main difference is that the CNOT itself is now applied in the control QPU instead of the target, so the cat-entangler and cat-disentangler must change accordingly.
 
-\textbf{TODO}: CNOTtargetProof
-
+\input{Figures/TargetProof}
 
 \section{Finding an efficient distribution}
 \label{EfficientDistrib}
@@ -87,12 +86,11 @@ We then solve the hypergraph partitioning problem (see Appendix~\ref{chap:HypPar
 
   \item The way the vertices are assigned in the blocks dictates how the corresponding wires are allocated to the different QPUs. 
   \item Whenever a hyperedge has all of its vertices in the same QPU (i.e.\ it is not cut), all the CNOT gates it represents are implemented locally in that QPU, so no ebit is required. 
-  \item If a hyperedge is cut once, some of the wires targeted by the CNOTs will appear in the same QPU as the control wire, so those CNOTs will be implemented locally. The rest of the target wires will be in a different QPU, so the corresponding CNOTs will have to be implemented non-locally, all using the same ebit (Figure~\ref{fig:vanillaCuts}a). 
-  \item In the case a hyperedge is cut more than once -- its vertices are split among more than two blocks -- we will proceed in the same manner, but now we will require multiple ebits (Figure~\ref{fig:vanillaCuts}b). As we previously defined, the function \(\lambda\colon H \to \mathbb{N}\) tells us how many blocks a cut hyperedge connects. In order to connect \(\lambda(h)\) blocks, we need at least \(\lambda(h)-1\) block-to-block connections: \(\lambda(h)-1\) ebits. The first halves of all of the ebits is kept by the QPU with the controlling wire, while the rest of the QPUs receive a single half each. This is why the metric we will need our hypergraph partitioner to minimise is \(\lambda-1\).
+  \item If a hyperedge is cut once, some of the wires targeted by the CNOTs will appear in the same QPU as the control wire, so those CNOTs will be implemented locally (Figure~\ref{fig:vanillaCutsA}). The rest of the target wires will be in a different QPU, so the corresponding CNOTs will have to be implemented non-locally, all using the same ebit (Figure~\ref{fig:vanillaCutsB}). 
+  \item In the case a hyperedge is cut more than once -- its vertices are split among more than two blocks -- we will proceed in the same manner, but now we will require multiple ebits (Figure~\ref{fig:vanillaCutsC}). As we previously defined, the function \(\lambda\colon H \to \mathbb{N}\) tells us how many blocks a cut hyperedge connects. In order to connect \(\lambda(h)\) blocks, we need at least \(\lambda(h)-1\) block-to-block connections: \(\lambda(h)-1\) ebits. The first halves of all of the ebits is kept by the QPU with the controlling wire, while the rest of the QPUs receive a single half each. This is why the metric we will need our hypergraph partitioner to minimise is \(\lambda-1\).
 \end{itemize}
 
-\textbf{TODO} Figure showing the different cases from the paragraph above, a and b. Give both the original circuit with dashed splits, the hypergraph and the black boxed distributed circuit (fig:vanillaCuts)
-
+\input{Figures/VanillaCuts}
 
 Following this intepretation of the hypergraph partition, we transform the original circuit to obtain its distributed version. To do so, for each cut hyperedge \(h\), we insert \(\lambda(h)-1\) cat-entanglers just before the group of CNOT gates it represents; and \(\lambda(h)-1\) cat-disentanglers right after them. Then, each of the CNOTs that have to be implemented non-locally are modified so their control wire is the corresponding QPU's local ebit half, while the target is unchanged.
 
@@ -138,7 +136,7 @@ In \S\ref{NonLocalGates} we have shown that any 1-qubit gate in the Clifford+T s
 
 \textbf{TODO} Figure with (hopefully) the same circuit as the previous figure, its version after CNOTpulling and its hypergraph partition, which should have less lambda-1 (fig:pulledCNOTexample)
 
-The preprocessing procedure is fairly straight-forward: Exploring the circuit from left to right, whever a CNOT gate is found, use the transformations listed in Figures~\textbf{TODO} to move it as early in the circuit as possible. The procedure introduces some additional \(X\) gates, due to the transformations in Figures~\textbf{TODO}. Fortunately, \(X\) is its own inverse (i.e.\ \(XX = I\)) and every 1-qubit gate in Clifford+T can be interchanged with \(X\) in a simple way (as shown in Figures~\textbf{TODO}). Hence, we should not expect a significant increase in the depth of the circuit, as most byproduct gates will cancel each other out.
+The preprocessing procedure is fairly straight-forward: Exploring the circuit from left to right, whever a CNOT gate is found, use the transformations listed in Figure~\ref{fig:pullRules} to move it as early in the circuit as possible. The procedure introduces some additional \(X\) gates. Fortunately, \(X\) is its own inverse (i.e.\ \(XX = I\)) and every 1-qubit gate in Clifford+T can be interchanged with \(X\) in a simple way (as shown in Figure~\ref{fig:props}). Hence, we should not expect a significant increase in the depth of the circuit, as most byproduct gates will cancel each other out.
 
 So far we have been talking about standard 1-qubit gates, but in practical circuits we are likely to find 1-qubit gates that are \textit{classically-controlled}, meaning that a classical signal (a bit, either \(0\) or \(1\)) decides whether the gate is applied or not. These are no issue for the distribution of the circuit, as this classical control may only require classical communication between QPUs. Concerning the preprocessing we just described, classically-controlled 1-qubit gates can commute with CNOT under the exact same circumstances as their uncontrolled version. The only difference is that, whenever a byproduct gate is created, we must make sure it is controlled by the same classical signal that controlled the original gate, as shown in Figure~\ref{fig:classicalControl}.
 
