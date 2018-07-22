@@ -12,11 +12,11 @@ For a QPU to be able to access another's qubit, we must provide them with some s
 
 In \S\ref{Principles}, we explained it was possible to affect a distant qubit by acting on another qubit with which it was entangled. We wish to exploit this property in order to allow a QPU to query another's QPU qubit. There are different levels of how strong a pair of qubits is entangled -- intuitively, how much they affect each other. This is often formalised as the correlation between the qubits possible measurement outcomes; for instance, the pair of qubits \(\frac{1}{\sqrt{2}}\ket{0,0} + \frac{1}{\sqrt{2}}\ket{1,1}\) is said to be \textit{maximally entangled}, as the possible measurement outcomes are exclusively either \(\ket{0,0}\) or \(\ket{1,1}\), always matching in both qubits\footnote{\, In total, there are four \textit{maximally entangled} states of a pair of qubits: \(\frac{1}{\sqrt{2}}\ket{0,0} + \frac{1}{\sqrt{2}}\ket{1,1}\) and \(\frac{1}{\sqrt{2}}\ket{0,0} - \frac{1}{\sqrt{2}}\ket{1,1}\) give perfect correlation, while \(\frac{1}{\sqrt{2}}\ket{0,1} + \frac{1}{\sqrt{2}}\ket{1,0}\) and \(\frac{1}{\sqrt{2}}\ket{0,1} - \frac{1}{\sqrt{2}}\ket{1,0}\) give perfect anti-correlation}. Naturally, the most efficient communication channel will take advantage of entanglement in its strongest form, and so we will make use pairs of qubits entangled in this particular maximally entangled state. This qubit pair configuration is generally known as a Bell state, and Figure~\ref{fig:bell} shows how to prepare it.
 
-\textbf{TODO}: fig:bell, show the circuit to make a bell state, how it is represented usually as a wire C and its Diract state.
+\input{Figures/Bell}
 
 An interesting property of the Bell state is shown in Figure~\ref{fig:sliding}: if a quantum gate, whose matrix representation is symmetric, is applied to one of the qubits, it is the same as if the gate was applied to the other qubit. In some sense, the gate can `slide' through the entanglement, like beads on a string; as if the entangled state were a curved wire, connecting the pair of qubits. Hopefully, this serves as a first intuition of how Bell states are a natural choice for implementing quantum comunication.
 
-\textbf{TODO}: fig:sliding, show how a H gate can slide through an ebit.
+\input{Figures/Sliding}
 
 \subsection{Entanglement distillation}
 \label{Distillation}
@@ -56,21 +56,19 @@ We now explain how ebits are used to allow a QPU to peek into another's qubits. 
 
 We aim to split a given circuit and distribute the fragments across multiple QPUs. The gates that should operate over qubits on different QPUs are known as \textit{non-local} gates. As we previously mentioned, any circuit can be converted to Clifford+T circuit (thanks to the Solovay-Kitaev theorem). In Clifford+T, the only gate that operates on more than one qubit is the CNOT. Hence, we only need to understand how CNOTs can be implemented non-locally.
 
-\textbf{TODO:} A figure with a simple circuit and dashed lines identifying how we want to split it, and highlighting a non-local CNOT.
-
 The construction we will use is a slight variation of what was proposed by \citet{NonLocalCNOT}, and its scheme is shown in Figure~\ref{fig:nonlocalCNOT}. In principle, we will use an \textit{ebit} per non-local CNOT. We will call the QPU that holds the target qubit (the one with a \(\oplus\)) the `target QPU' and similarly for the control qubit. 
 
 \input{Figures/nonLocalCNOT}
 
-The implementation of a local CNOT gate has three steps. First, we must apply what the authors refer to as the \textit{cat-entangler} (Figure~\ref{fig:cat-entangler}), which creates a local `copy'\footnote{\, Note that there is no such thing as `copying' a quantum state (due to the non-cloning theorem). What we mean here by `copying' is generating, from \(\ket{\psi} = \alpha\ket{0} + \beta\ket{1}\), the state \(\ket{\psi} = \alpha\ket{0,0} + \beta\ket{1,1}\) which is fundamentally different from an actual copy: \(\ket{\psi,\psi} = \alpha^2\ket{0,0} + \alpha\beta\ket{0,1} + \alpha\beta\ket{1,0} + \beta^2\ket{1,1}\).} of the control qubit inside the target QPU. In the process, the ebit half in the control QPU is measured (and thus destroyed), and the outcome is used to correct the other half, in the same spirit as in the MBQC model. These corrections are done via \textit{classically controlled gates}; devices that either apply a transformation to the qubit or none, depending on the value of a classical bit. Notice that the only information physically crossing the boundary between blocks is the \textit{classical} outcome of the measurement (a bit, either \(0\) or \(1\)).
+The implementation of a local CNOT gate has three steps. First, we must apply what the authors refer to as the \textit{cat-entangler} (Figure~\ref{fig:cat-entangler}), which creates a local `copy'\footnote{\, Note that there is no such thing as `copying' a quantum state (due to the non-cloning theorem). What we mean here by `copying' is generating, from \(\ket{\psi} = \alpha\ket{0} + \beta\ket{1}\), the state \(\ket{\psi'} = \alpha\ket{0,0} + \beta\ket{1,1}\) which is fundamentally different from an actual copy: \(\ket{\psi}\otimes\ket{\psi} = \alpha^2\ket{0,0} + \alpha\beta\ket{0,1} + \alpha\beta\ket{1,0} + \beta^2\ket{1,1}\).} of the control qubit inside the target QPU. In the process, the ebit half in the control QPU is measured (and thus destroyed), and the outcome is used to correct the other half, in the same spirit as in the MBQC model. These corrections are done via \textit{classically controlled gates}; devices that either apply a transformation to the qubit or none, depending on the value of a classical bit. Notice that the only information physically crossing the boundary between blocks is the \textit{classical} outcome of the measurement (a bit, either \(0\) or \(1\)).
 
-\textbf{TODO}: Show the circuit for the cat-entangler and the resulting state
+\input{Figures/Entangler}
 
 Then, the CNOT gate is \textit{applied locally} inside the target QPU, between its ebit half and the target qubit. At the end, the \textit{cat-disentangler} must be applied (Figure~\ref{fig:cat-disentangler}), which simply destroys -- with a measurement -- the remaining ebit half and then corrects the control qubit, so the randomness of the measurement is counteracted. Once again, only classical information crosses the boundary.
 
-\textbf{TODO}: Show the circuit for the cat-disentangler and the resulting state
+\input{Figures/Disentangler}
 
-In this way, we have implemented a non-local CNOT gate using one ebit and two classical bit messages between QPUs. However, the true advantage of this approach is attained when multiple non-local CNOTs are implementing using a single ebit: Once the cat-entangler is applied, any number of CNOTs whose target is in the same QPU, and that are controlled by the same qubit, may all be implemented by using the same ebit half as control, as shown in Figure~\ref{fig:multipleCNOTs}.
+In this way, we have implemented a non-local CNOT gate using one ebit and two classical bit messages between QPUs. However, the true advantage of this approach is attained when multiple non-local CNOTs are implementing using a single ebit: Once the cat-entangler is applied, any number of CNOTs whose target is in the same QPU, and that are controlled by the same qubit, may all be implemented by using the same ebit half as control, as shown in Figure~\ref{fig:nonlocalCNOTs}.
 
 \input{Figures/nonLocalCNOTs}
 

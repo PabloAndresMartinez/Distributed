@@ -134,7 +134,7 @@ A simple example of the distribution process is shown in Figure~\ref{fig:distrib
 \subsection{Bringing CNOT gates together}
 \label{pullCNOTs}
 
-In \S\ref{NonLocalGates} we have shown that any 1-qubit gate in the Clifford+T set acting on the control wire of a CNOT gate, with the exception of the Hadamard gate, can commute with the CNOT up to some byproduct. Here we use this fact, applying some preprocessing on the input circuit that brings together nearby CNOT gates, allowing us to implement more non-local CNOT gates using a single ebit. Figure~\ref{fig:pulledCNOTexample} gives an example of how these transformations -- listed in Figures \textbf{TODO} -- can lead to a more efficient distribution of the circuit.
+In \S\ref{NonLocalGates} we have shown that any 1-qubit gate in the Clifford+T set acting on the control wire of a CNOT gate, with the exception of the H gate, can commute with the CNOT up to some byproduct. Here we use this fact, applying some preprocessing on the input circuit that brings together nearby CNOT gates, allowing us to implement more non-local CNOT gates using a single ebit. Figure~\ref{fig:pulledCNOTexample} gives an example of how these transformations -- listed in Figures \textbf{TODO} -- can lead to a more efficient distribution of the circuit.
 
 \textbf{TODO} Figure with (hopefully) the same circuit as the previous figure, its version after CNOTpulling and its hypergraph partition, which should have less lambda-1 (fig:pulledCNOTexample)
 
