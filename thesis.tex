@@ -61,6 +61,7 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{colortbl}
@@ -72,6 +73,12 @@
 \usepackage{pgfplots}
 \usepackage{pifont}
 \usepackage{multirow}
+
+\newcounter{nthm}[chapter] % defines algorithm counter for chapter-level
+\renewcommand{\thenthm}{\thechapter .\arabic{nthm}} %defines appearance of the algorithm counter
+\newtheorem{theorem}[nthm]{Theorem}
+\newtheorem{corollary}[nthm]{Corollary}
+\newtheorem{remark}[nthm]{Remark}
 
 \usepackage{tikz}
 \usetikzlibrary{positioning}
