@@ -111,13 +111,14 @@ Most of the literature on quantum algorithms describes these by explicitly givin
 
 Unfortunately, the fact that algorithms are almost exclusively defined in the circuit model implies that other models of quantum computing are disregarded by a large portion of the community. In order to make other models of computation accessible, we need to provide automated procedures for transforming algorithms from the circuit model to these (and vice versa). Work has been done on the transformation from circuit to MBQC and backwards, the latter being the most challenging~\citep{gflow}. However, there is little amount of literature describing how to go from the circuit model to the distributed model. In \S\ref{IntroDistributing} we give an overview of the existent work on that aspect, and identify the gap on the literature we aim to answer in this thesis.
 
-\begin{mdframed}[backgroundcolor=gray!20,leftmargin=20pt,rightmargin=20pt, innerbottommargin=10pt] 
-\small
-\textbf{Summary:} Here are the key concepts to keep in mind while reading the rest of this thesis:
+%\begin{mdframed}[backgroundcolor=gray!20,leftmargin=20pt,rightmargin=20pt, innerbottommargin=10pt] 
+\begin{remark} \normalfont
+Here are the key concepts to keep in mind while reading the rest of this thesis:
 \begin{itemize}
 \item Quantum computers provide a computing power well beyond the capabilities of classical computers, which would be exploitable in many areas of science.
 \item Small quantum computers are already available. 
 \item Scaling up is a challenging problem due to: \textit{decoherence}, which may be overcome by the joint effort of error-correction, physics and engineering communities; and \textit{connectivity}, which may be solved using distributed architectures.
 \item There is practically no programming support for distributed architectures.
 \end{itemize}
-\end{mdframed}
+\end{remark}
+%\end{mdframed}
