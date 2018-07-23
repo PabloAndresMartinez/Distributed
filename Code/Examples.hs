@@ -131,6 +131,19 @@ pull2 (a,b,c) = do
   qnot_at b `controlled` c
   return (a,b,c)
 
+pull3 :: (Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit)
+pull3 (a,b,c) = do
+  qnot_at b `controlled` c 
+  gate_X_at b
+  qnot_at b `controlled` a
+  gate_Y_at b
+  qnot_at a `controlled` c
+  gate_H_at a
+  gate_T_at c
+  qnot_at b `controlled` c
+  qnot_at a `controlled` b
+  return (a,b,c)
+
 interesting :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
 interesting (a,b,c,d) = do
   qnot_at d `controlled` a

@@ -12,7 +12,7 @@
       %\node[below right=-1mm and -23mm of eq] (alg) {\small \(g\in\{H,X,Y,Z\}\)};
     \end{tikzpicture}
   };
-  \node[above right=25mm and 0mm of textgg, font=\itshape\large] (textCNOT) {Flipping a CNOT};
+  \node[above right=28mm and 13mm of textgg, font=\itshape\large] (textCNOT) {CNOT flip};
   \node [below=-5mm of textCNOT] (CNOT) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/HCNOTH}};       
@@ -22,8 +22,21 @@
       \node[left=7mm of c2.east, rectangle,fill=white,minimum width=5mm, minimum height=10mm] {};
     \end{tikzpicture}
   };
-  \node[above left=25mm and 0mm of textgg, font=\itshape\large] (textHXZ) {Interacting \(H\), \(X\) and \(Z\)};
-  \node [below left=-5mm and -34mm of textHXZ] (XH) {
+  \node[above left=28mm and 0mm of textgg, font=\itshape\large] (textHXZ) {Rules with \(H\), \(X\), \(Y\) and \(Z\)};
+  \node [below left=-5mm and -37mm of textHXZ] (XZ) {
+    \begin{tikzpicture}
+      \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/XZ}};       
+      \node[below=-3mm of c1] (eq) {\(=\)};  
+      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/Y}};
+      \node[below=-3mm of c2] (eq2) {\(=\)};  
+      \node[below=-3mm of eq2, inner sep=0pt] (c3) {\includegraphics[scale=2]{Figures/circuits/ZX}};
+      \node[right=7mm of c1.west, rectangle,fill=white,minimum size=5mm] {};
+      \node[left=7mm of c3.east, rectangle,fill=white,minimum size=5mm] {};
+      \node[left=7mm of c1.east, rectangle,fill=white,minimum size=5mm] {};
+      \node[right=7mm of c3.west, rectangle,fill=white,minimum size=5mm] {};
+    \end{tikzpicture}
+  };
+  \node [below right=-5mm and -37mm of textHXZ] (XH) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/XH}};       
       \node[below=-3mm of c1] (eq) {\(=\)};  
@@ -33,43 +46,28 @@
       \node[left=7mm of c1.east, rectangle,fill=white,minimum size=5mm] {};
       \node[right=7mm of c2.west, rectangle,fill=white,minimum size=5mm] {};
     \end{tikzpicture}
-  };
-  \node [below right=-5mm and -34mm of textHXZ] (XZ) {
-    \begin{tikzpicture}
-      \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/XZ}};       
-      \node[below=-3mm of c1] (eq) {\(=\)};  
-      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/ZX}};
-      \node[right=7mm of c1.west, rectangle,fill=white,minimum size=5mm] {};
-      \node[left=7mm of c2.east, rectangle,fill=white,minimum size=5mm] {};
-      \node[left=7mm of c1.east, rectangle,fill=white,minimum size=5mm] {};
-      \node[right=7mm of c2.west, rectangle,fill=white,minimum size=5mm] {};
-    \end{tikzpicture}
   };  
-  \node[below left=5mm and 7mm of textgg, font=\itshape\large] (textZS) {Interchanging \(Z\)};
-  \node [below left=-5mm and -27mm of textZS] (ZS) {
+  \node[below left=8mm and 7mm of textgg, font=\itshape\large] (textZS) {Rules with \(Z\), \(S\) and \(T\)};
+  \node [below left=-5mm and -34mm of textZS] (ZS) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/ZS}};       
       \node[below=-3mm of c1] (eq) {\(=\)};  
-      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/SZ}};
+      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/S'}};
       \node[right=7mm of c1.west, rectangle,fill=white,minimum size=5mm] {};
-      \node[left=7mm of c2.east, rectangle,fill=white,minimum size=5mm] {};
       \node[left=7mm of c1.east, rectangle,fill=white,minimum size=5mm] {};
-      \node[right=7mm of c2.west, rectangle,fill=white,minimum size=5mm] {};
     \end{tikzpicture}
   };
-  \node [below right=-5mm and -27mm of textZS] (ZT) {
+  \node [below right=-5mm and -34mm of textZS] (ZT) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/ZT}};       
       \node[below=-3mm of c1] (eq) {\(=\)};  
-      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/TZ}};
+      \node[below=-3mm of eq, inner sep=0pt] (c2) {\includegraphics[scale=2]{Figures/circuits/T'}};
       \node[right=7mm of c1.west, rectangle,fill=white,minimum size=5mm] {};
-      \node[left=7mm of c2.east, rectangle,fill=white,minimum size=5mm] {};
       \node[left=7mm of c1.east, rectangle,fill=white,minimum size=5mm] {};
-      \node[right=7mm of c2.west, rectangle,fill=white,minimum size=5mm] {};
     \end{tikzpicture}
   };
-  \node[below right=5mm and 3mm of textgg, font=\itshape\large] (textXS) {Interchanging \(X\)};
-  \node [below left=-5mm and -27mm of textXS] (XS) {
+  \node[below right=8mm and 3mm of textgg, font=\itshape\large] (textXS) {Rules with \(X\), \(S\) and \(T\)};
+  \node [below left=-5mm and -34mm of textXS] (XS) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/XS}};       
       \node[below=-3mm of c1] (eq) {\(=\)};  
@@ -80,7 +78,7 @@
       \node[right=7mm of c2.west, rectangle,fill=white,minimum size=5mm] {};
     \end{tikzpicture}
   };
-  \node [below right=-5mm and -27mm of textXS] (XT) {
+  \node [below right=-5mm and -34mm of textXS] (XT) {
     \begin{tikzpicture}
       \node[inner sep=0pt] (c1) at (0,0) {\includegraphics[scale=2]{Figures/circuits/XT}};       
       \node[below=-3mm of c1] (eq) {\(=\)};  
@@ -92,7 +90,7 @@
     \end{tikzpicture}
   };
 \end{tikzpicture}
-\vspace*{31mm}
+\vspace*{35mm}
 \caption{Some basic properties of the gates in the Clifford+T set. Here, \(S^*\) and \(T^*\) represent the inverse gates of \(S\) and \(T\), i.e. their conjugate transpose.}
 \label{fig:props}
 \end{figure}
