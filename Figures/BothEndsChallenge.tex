@@ -13,7 +13,7 @@
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
     \end{tikzpicture}
   };
-  \node[above right=-27mm and 5mm of circ] (controlHyp) {
+  \node[below left=5mm and -23mm of circ] (controlHyp) {
     \begin{tikzpicture}
       \coordinate (O) at (0,0);
       \coordinate (A) at (90:10mm);
@@ -26,10 +26,13 @@
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      \coordinate (leftPoint) at (270:10mm);
+      \coordinate (rightPoint) at (30:10mm);
+      \pic (cut) {cut=leftPoint/rightPoint};
       \node[above left=0mm and 13mm of A, font=\itshape] (text) {b)};
     \end{tikzpicture}
   };
-  \node[right=-27mm and 15mm of circ] (targetHyp) {
+  \node[right=8mm of controlHyp] (targetHyp) {
     \begin{tikzpicture}
       \coordinate (O) at (0,0);
       \coordinate (A) at (90:10mm);
@@ -42,32 +45,13 @@
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      \coordinate (leftPoint) at (270:10mm);
+      \coordinate (rightPoint) at (30:10mm);
+      \pic (cut) {cut=leftPoint/rightPoint};
       \node[above left=0mm and 13mm of A, font=\itshape] (text) {c)};
     \end{tikzpicture}
   };
-  \node[below right=0mm and 0mm of circ] (bothHyp) {
-    \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxC) at (4mm,3mm);
-      \coordinate (auxT) at (-4mm,3mm);
-      \coordinate (A) at (90:20mm);
-      \coordinate (B) at (210:20mm);
-      \coordinate (C) at (330:20mm);
-      \draw[ultra thick] (auxT) -- (A);
-      \draw[ultra thick] (auxT) -- (B);
-      \draw[ultra thick] (auxT) -- (C);
-      \draw[ultra thick] (A) -- (B);
-      \draw (auxC) -- (A);
-      \draw (auxC) -- (B);
-      \draw (auxC) -- (C);
-      \draw (B) -- (C);
-      \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
-      \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
-      \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {c)};
-    \end{tikzpicture}
-  };
-  \node[right=5mm of bothHyp] (hypergraph) {
+  \node[below right=-20mm and 15mm of circ] (hypergraph) {
     \begin{tikzpicture}
       \coordinate (O) at (0,0);
       \coordinate (auxA) at (90:9mm);
@@ -92,17 +76,14 @@
       \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
       \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
       \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {e)};
+      \coordinate (leftPoint) at (285:18mm);
+      \coordinate (rightPoint) at (15:18mm);
+      \pic (cut) {cut=leftPoint/rightPoint};
+      \node[above left=0mm and 13mm of A, font=\itshape] (text) {d)};
     \end{tikzpicture}
   };
 \end{tikzpicture}
-\vspace*{5mm}
-\caption{}
+%\vspace*{5mm}
+\caption{A circuit \textit{a)} and its hypergraph \textit{b)} as built by Algorithm~\ref{code:buildHypVanilla}. Hypergraph \textit{c)} is the result of running the same algorithm but grouping CNOTs in the same hyperedge if and only if they share the same target (instead of control). Hypergraph \textit{d)} is the one built by Algorithm~\ref{code:buildHypBothEnds}.}
 \label{fig:BothEndsChallenge}
 \end{figure}
-
-\textbf{TODO}: If the partition is \(\{\{A\},\{B,C\}\}\), then \(\alpha\) is a local CNOT, while \(\beta\) and \(\gamma\) are implemented using the common-control method. We know the common-control method must be used because the hyperedge cut is of the control type or, equivalently, because both \(\beta\) and \(\gamma\) vertices are assigned to the same block as their targets \(C\) and \(B\). Different line format for the hyperedges whether control or target.
-
-\textbf{TODO}: Show cut that is best for common-target
-
-\textbf{TODO}: Figure of hypergraphs from prev Fig; with control hyps, target hyps, naively. The dashed lines represent two hypothetical ways of partitioning the hypergraph. Different line format for the hyperedges whether control or target (fig:BothEndsChallenge)

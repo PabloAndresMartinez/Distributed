@@ -156,7 +156,22 @@ interesting (a,b,c,d) = do
   return (a,b,c,d)
 
 interesting2 :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
-interesting2 (a,b,c,d) = do
+interesting2  (a,b,c,d) = do
+  qnot_at d `controlled` a
+  gate_T_at a
+  qnot_at c `controlled` a
+  qnot_at a `controlled` b
+  gate_H_at b
+  qnot_at c `controlled` d
+  qnot_at d `controlled` b
+  qnot_at a `controlled` b
+  gate_H_at b
+  gate_Y_at d
+  qnot_at d `controlled` b
+  return (a,b,c,d)
+
+interesting3 :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
+interesting3 (a,b,c,d) = do
   qnot_at d `controlled` a
   gate_S_at a
   gate_Y_at d
