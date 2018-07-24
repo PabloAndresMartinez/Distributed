@@ -178,10 +178,10 @@ buildHyp gs n (_, f_ends, _) = hyp4
     hyp3 = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp2 -- Remove all singleton (unconnected) hyperedges
     hyp4 = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (n-w-1,p)) ws,o,ht))) hyp3 -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
     unpackTargets []             = []
-    unpackTargets (h@(i,ws,o,ht):hs) = h' ++ (unpackTargets hs)
+    unpackTargets (h@(_,ws,_,ht):hs) = h' ++ (unpackTargets hs)
       where
         h' = if ht==Control then [h] else
-          map (\w -> (i,[w],o,ht)) ws
+          map (\(g,n) -> (n,[(g,n)],n+1,ht)) ws
 
 buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
 buildHypRec []     _ _    = M.empty
