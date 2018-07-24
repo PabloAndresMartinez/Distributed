@@ -1,0 +1,18 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+  \node {
+    \begin{tikzpicture}
+      \node[inner sep=0pt] (circuit) at (0,0) {\includegraphics[scale=2]{Figures/circuits/interchangeCNOTs1}};
+      \node[right=0mm of circuit.north west, font=\itshape] (text) {a)};
+    \end{tikzpicture}
+    \hspace{8mm}
+    \begin{tikzpicture}
+      \node[inner sep=0pt] (circuit) at (0,0) {\includegraphics[scale=2]{Figures/circuits/interchangeCNOTs2}};
+      \node[right=0mm of circuit.north west, font=\itshape] (text) {b)};
+    \end{tikzpicture}
+  };
+\end{tikzpicture}
+\caption{Equivalent circuits with the two gates in \textit{a)} being interchanged in \textit{b)}. A byproduct CNOT gate is created in the process.}
+\label{fig:interchangeRule}
+\end{figure}
