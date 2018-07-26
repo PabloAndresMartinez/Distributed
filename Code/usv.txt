@@ -1,0 +1,129 @@
+Inputs: 0:Qbit, 1:Qbit, 2:Qbit, 3:Qbit, 4:Qbit, 5:Qbit, 6:Qbit, 7:Qbit, 8:Qbit, 9:Qbit, 10:Qbit, 11:Qbit, 12:Qbit, 13:Qbit, 14:Qbit, 15:Qbit, 16:Qbit, 17:Qbit, 18:Qbit, 19:Qbit, 20:Qbit, 21:Qbit, 22:Qbit, 23:Qbit, 24:Qbit, 25:Qbit, 26:Qbit, 27:Qbit, 28:Qbit, 29:Qbit, 30:Qbit
+Comment["ENTER: sieving"]()
+Comment["ENTER: Pairing"]()
+QDiscard(27)
+Comment["EXIT: Pairing"]()
+Comment["ENTER: Combining"]()
+QGate["not"](4) with controls=[+0]
+QMeas(4)
+# Value of wire 4: # Value: False
+DTerm0(4)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](5) with controls=[+1]
+QMeas(5)
+# Value of wire 5: # Value: True
+DTerm1(5)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](6) with controls=[+2]
+QMeas(6)
+# Value of wire 6: # Value: True
+DTerm1(6)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](7) with controls=[+3]
+QMeas(7)
+# Value of wire 7: # Value: True
+DTerm1(7)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](12) with controls=[+8]
+QMeas(12)
+# Value of wire 12: # Value: False
+DTerm0(12)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](13) with controls=[+9]
+QMeas(13)
+# Value of wire 13: # Value: True
+DTerm1(13)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](14) with controls=[+10]
+QMeas(14)
+# Value of wire 14: # Value: False
+DTerm0(14)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](15) with controls=[+11]
+QMeas(15)
+# Value of wire 15: # Value: True
+DTerm1(15)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](20) with controls=[+16]
+QMeas(20)
+# Value of wire 20: # Value: False
+DTerm0(20)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](21) with controls=[+17]
+QMeas(21)
+# Value of wire 21: # Value: True
+DTerm1(21)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](22) with controls=[+18]
+QMeas(22)
+# Value of wire 22: # Value: False
+DTerm0(22)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](23) with controls=[+19]
+QMeas(23)
+# Value of wire 23: # Value: True
+DTerm1(23)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](28) with controls=[+24]
+QMeas(28)
+# Value of wire 28: # Value: False
+DTerm0(28)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](29) with controls=[+25]
+QMeas(29)
+# Value of wire 29: # Value: True
+DTerm1(29)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](30) with controls=[+26]
+QMeas(30)
+# Value of wire 30: # Value: False
+DTerm0(30)
+Comment["EXIT: Combining"]()
+QDiscard(1)
+QDiscard(2)
+QDiscard(3)
+QDiscard(9)
+QDiscard(11)
+QDiscard(17)
+QDiscard(19)
+QDiscard(25)
+Comment["ENTER: Pairing"]()
+QDiscard(26)
+Comment["EXIT: Pairing"]()
+Comment["ENTER: Combining"]()
+QGate["not"](8) with controls=[+0]
+QMeas(8)
+# Value of wire 8: # Value: True
+DTerm1(8)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](16) with controls=[+10]
+QMeas(16)
+# Value of wire 16: # Value: False
+DTerm0(16)
+Comment["EXIT: Combining"]()
+Comment["ENTER: Combining"]()
+QGate["not"](24) with controls=[+18]
+QMeas(24)
+# Value of wire 24: # Value: True
+DTerm1(24)
+Comment["EXIT: Combining"]()
+QDiscard(0)
+QDiscard(18)
+Comment["EXIT: sieving"]()
+Outputs: 10:Qbit
+

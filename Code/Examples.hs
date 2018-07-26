@@ -1,4 +1,4 @@
-module Mine.Examples where
+module Distributer.Examples where
 
 import Quipper
 import Quipper.Generic
@@ -6,11 +6,16 @@ import Quipper.Monad
 import Quipper.QData
 import Quipper.Circuit
 import QuipperLib.Decompose
-import QuipperLib.QFT
 import Algorithms.BF.BooleanFormula
 import System.Random
 import Libraries.RandomSource
 import QuipperLib.Unboxing
+
+import QuipperLib.QFT
+import qualified Algorithms.BF.BooleanFormula as BF
+import qualified Algorithms.BWT.BWT as BWT
+import qualified Algorithms.GSE.GSE as GSE
+import qualified Algorithms.GSE.GSEData as GSEData
 
 and_gate :: Circ (Qubit)
 and_gate = do
@@ -183,3 +188,41 @@ interesting3 (a,b,c,d) = do
   gate_Z_at a
   qnot_at d `controlled` a
   return (a,b,c,d)
+
+-- BF, only the walk part, using the default test oracle
+bf = BF.walk
+
+bf_shape = registerShape $ test_oracle
+
+-- BWT with default options
+bwt :: () -> Circ [Bit]
+bwt _ = BWT.qrwbwt oracle s dt
+  where
+    s = 1 -- number of timesteps
+    dt = pi/180 -- timestep size
+    oracle = BWT.oracle_orthodox f g -- the default oracle construction for the two given bitstrings
+      where
+        n = 5 -- input bitstring length
+        f = take n (True : False : f) -- a function
+        g = take n (False : True : g) -- another function
+        
+-- GSE overall circuit with default options
+--    Needs to be IO because it loads from some files    
+gse :: IO (() -> Circ [Bit])
+gse = let 
+  b        = 3 -- The number of precision qubits
+  m        = 4 -- The number of basis functions
+  occupied = 2 -- The number of occupied orbitals
+  delta_e  = 6.5536 -- Energy range
+  tau = 2*pi / delta_e -- The Hamiltonian scaling parameter
+  e_max    = -3876.941 -- Maximum energy
+  nfun     = (\k -> 1)  -- The function k -> Nk; by default, we skip the repetition
+  orthodox = False -- Use orthodox Coulomb operator?
+  -- Integral data hpq and hpqrs:
+  h1_file  = "h_1e_ascii"
+  h2_file  = "h_2e_ascii"
+  datadir  = "gseData/"
+  in do
+    gse_data <- GSEData.load_gse_data m (datadir++h1_file) (datadir++h2_file)
+    return $ (\_ -> GSE.gse b m occupied gse_data tau e_max nfun orthodox)
+    

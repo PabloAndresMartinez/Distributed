@@ -1,8 +1,0 @@
-#!/bin/bash
-
-rm Mine
-quipper Mine.hs Examples.hs
-./Mine
-
-rm *o
-rm *hi
