@@ -10,12 +10,18 @@ import Algorithms.BF.BooleanFormula
 import System.Random
 import Libraries.RandomSource
 import QuipperLib.Unboxing
+import Data.IntMap.Strict (IntMap)
 
 import qualified QuipperLib.QFT as QFT
 import qualified Algorithms.BF.BooleanFormula as BF
 import qualified Algorithms.BWT.BWT as BWT
 import qualified Algorithms.GSE.GSE as GSE
 import qualified Algorithms.GSE.GSEData as GSEData
+import qualified Algorithms.TF.QWTFP as TF
+import qualified Algorithms.TF.Definitions as TFDef
+import qualified Algorithms.TF.Oracle as TFOrac
+import qualified Algorithms.USV.USV as USV
+import qualified Algorithms.USV.Definitions as USVDef
 
 -- ## From Quipper ## --
 
@@ -63,6 +69,30 @@ gse_C = let
     gse_data <- GSEData.load_gse_data m (datadir++h1_file) (datadir++h2_file)
     return $ (\_ -> GSE.gse b m occupied gse_data tau e_max nfun orthodox)
     
+-- TF overall circuit with Orthodox oracle
+tf :: IO (() -> Circ (Bit, TFDef.CNode, IntMap TFDef.CNode, IntMap (IntMap Bit)), ())
+tf = return (tf_C, ())
+tf_C :: () -> Circ (Bit, TFDef.CNode, IntMap TFDef.CNode, IntMap (IntMap Bit))
+tf_C _ = TF.a1_QWTFP spec
+  where
+    spec = (n, r, (\u v edge -> do (u,v,edge) <- TFOrac.o1_ORACLE l u v edge; return edge), TF.standard_qram)
+    l = 4
+    n = 3
+    r = 2
+
+-- USV, circuit for the R algorithm (3)
+usvR :: IO (() -> Circ USVDef.TwoPoint, ())
+usvR = return (usvR_C, ())
+usvR_C :: () -> Circ USVDef.TwoPoint
+usvR_C _ = USV.algorithm_R b l m i0 p randomgen
+  where
+    b = (replicate 5 (replicate 5 1))
+    l = ceiling $ USVDef.norm $ head b
+    m = p-1
+    i0 = 0
+    p = USVDef.find_prime ((n_from_b)^3)
+    n_from_b = length b
+    randomgen = mkStdGen 1234
 
 -- ## Custom circuits ## --
 

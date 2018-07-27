@@ -45,7 +45,7 @@ targetOf gate = case gate of
   (QDiscard target)                    -> target
   (CDiscard target)                    -> target
   _                                    -> error standardError
-  where standardError = "DistribHPartError: Gate "++show gate++"was not properly prepocessed."
+  where standardError = "DistribHPartError: Gate "++show gate++" was not properly prepocessed."
 
 cliffordT :: GateBase
 cliffordT = Standard (3*digits) (RandomSource $ mkStdGen 1234)
@@ -83,7 +83,7 @@ gateInjections _ g = identity_transformer g
 prepareCircuit :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> Mode -> (qin -> Circ qout)
 prepareCircuit circ shape (f_pull,_) = circ4
   where
-    circ1   = unbox_recursive (transform_generic swapRemover $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines *PROVISIONAL* 
+    circ1   = transform_generic swapRemover (unbox_recursive $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines *PROVISIONAL* 
     circ2  = \inp -> without_comments $ circ1 inp -- Ignore comments
     circ3 = separateClassicalControl circ2
     circ4 = if f_pull then pullCNOTs circ3 shape else circ3
@@ -301,12 +301,7 @@ distributeCNOTs (c:cs) gs partition eDic = distributeCNOTs cs gs' partition eDic
     ebit = eDic M.! (source, partition !! sink, ht) - 1
 
 
-{- -- For the case of GSE, which needs to extract the circuit from an IO monad
-main = do 
- gseCirc <- gse 
- let 
--}
-
+-- ## Main program ## --
 main = do
   (input,shape) <- Cfg.circuit
   let
