@@ -14,6 +14,7 @@ import qualified Data.Map as M
 import Data.List (sort, (!!))
 import qualified HSH as HSH
 import Distributer.Examples
+import qualified Distributer.Configuration as Cfg
 
 type Mode = (Bool,Bool) -- (PullCNOTs,BothRemotes)
 
@@ -307,14 +308,9 @@ main = do
 -}
 
 main = do
-  putStrLn $ "The correct syntax is: ./Distributer <k> <epsilon> <circuitFromExamples> <modeBits>"
-  (k:epsilon:circName:modeBits:[]) <- getArgs
+  (input,shape) <- Cfg.circuit
   let
-    f_pull = case head modeBits of '0' -> False; '1' -> True; _ -> error "Invalid mode configuration"
-    f_remote = case tail modeBits of "0" -> False; "1" -> True; _ -> error "Invalid mode configuration"
-    mode = (f_pull,f_remote)
-    input = interesting2
-    shape = (qubit,qubit,qubit,qubit)
+    k = Cfg.k; epsilon = Cfg.epsilon; mode = (Cfg.pullCNOTs, Cfg.bothRemotes)
     circ  = prepareCircuit input shape mode
     extractedCirc@(_, ((_,theGates,_,nWires),_), _) = encapsulate_generic id circ shape
     hypergraph = buildHyp theGates nWires mode
@@ -345,5 +341,5 @@ main = do
             putStrLn $ "Partition: " ++ show (take nWires partition)
             putStrLn $ "Total number of ebits: " ++ show nEbits
             putStrLn $ ""
-            putStrLn $ "Extensions: " ++ if fst mode then "PullCNOTs, " else "" ++ if snd mode then "BothRemotes, " else ""
+            putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs, " else "") ++ (if snd mode then "BothRemotes, " else "")
             putStrLn $ "k = "++show k++"; epsilon = "++show epsilon
