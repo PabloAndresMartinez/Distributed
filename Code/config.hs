@@ -1,17 +1,20 @@
 module Distributer.Configuration where
 
 import Distributer.Examples
+import Quipper.Printing
 
 -- Partitioning parameters
 k = "2"
 epsilon = "0.03"
 
 -- Set True to activate each extension, False to deactivate it
-pullCNOTs = False
+pullCNOTs = True
 bothRemotes = False
-
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = usvR
+circuit = interesting2
+
+-- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
+outputAs = Preview
 
 {- List of available values for circuit:
 
@@ -21,7 +24,7 @@ bfWalk -- the quantum walk part of BooleanFormula, the other parts have a gate w
 bwt -- Binary Welded Tree
 gse -- Ground State Estimation
 
--- These two don't work with pullCNOTs active, they go out of memory even with 16GB of RAM
+-- These two don't work if bothRemotes is active, KaHyPart goes out of memory (more than 16GB)
 tf  -- Triangle Finding problem 
 usvR -- The algorithm first prepares a superposition of hypercubes, whose difference is the shortest vector. It then measures the output to collapse the state to a TwoPoint.
 

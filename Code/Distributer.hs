@@ -172,24 +172,34 @@ type Hypergraph = M.Map Wire [(Int,[(Wire,Int)],Int,HedgeType)]
 data HedgeType = Control | Target | Unknown deriving (Eq, Ord, Show)
 
 buildHyp :: [Gate] -> Int -> Mode -> Hypergraph
-buildHyp gs n (_, f_both) = hyp4
+buildHyp gs n (_, f_both) = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
   where
-    hyp  = buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
-    hyp2 = if f_both then hyp else M.map unpackTargets hyp -- If vanilla mode, convert all target-hyperedges to multiple edges
-    hyp3 = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp2 -- Remove all singleton (unconnected) hyperedges
-    hyp4 = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (n-w-1,p)) ws,o,ht))) hyp3 -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
-    unpackTargets []             = []
-    unpackTargets (h@(_,ws,_,ht):hs) = h' ++ (unpackTargets hs)
-      where
-        h' = if ht==Control then [h] else
-          map (\(g,n) -> (n,[(g,n)],n+1,ht)) ws
+    hyp = if f_both then toPositive (bothHyp gs 0 0) else vanillaHyp gs 0 -- Build the hypergraph by exploring the gates recursively
+    toPositive = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (n-w-1,p)) ws,o,ht)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
 
-buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
-buildHypRec []     _ _    = M.empty
-buildHypRec (g:gs) n cnot = case g of
+vanillaHyp :: [Gate] -> Int -> Hypergraph
+vanillaHyp []     _ = M.empty
+vanillaHyp (g:gs) n = let
+ newHEdgeAt wire = M.alter newHEdge wire $ vanillaHyp gs (n+1) -- Subsequent CNOTs on 'wire' create a new hyperedge
+ newHEdge v = case v of Nothing -> Just [(nan,[],n,Control)]
+                        Just ((_,ws,o,ht):es) -> Just ((nan,[],n,Control):(n+1,ws,o,ht):es)
+ nan = 0
+ in case g of
   (QGate "not" _ [target] [] [signedCtrl] _) -> newCNOTAt control target
     where
-      newCNOTAt ctrl target = M.alter (newCNOT Target cnot) target $ M.alter (newCNOT Control cnot) ctrl $ buildHypRec gs (n+1) (cnot-1)
+      newCNOTAt ctrl target = M.alter (newCNOT target) ctrl $ M.alter newHEdge target $ vanillaHyp gs (n+1)
+      newCNOT target v = case v of Nothing -> Just [(nan,[(target,n)],n+1,Control)] -- n+1 because it finishes AFTER this gate
+                                   Just ((_,ws,o,ht):es) -> Just ((nan,(target,n):ws,o,ht):es) -- Add the cnot to the hyperedge, as they are of the same type
+      control = getWire signedCtrl
+      getWire (Signed w s) = if s then w else error $ "DistribHPartError: Negative control" -- As Clifford+T only allows positive controls
+  _ -> newHEdgeAt $ targetOf g
+
+bothHyp :: [Gate] -> Int -> Int -> Hypergraph
+bothHyp []     _ _    = M.empty
+bothHyp (g:gs) n cnot = case g of
+  (QGate "not" _ [target] [] [signedCtrl] _) -> newCNOTAt control target
+    where
+      newCNOTAt ctrl target = M.alter (newCNOT Target cnot) target $ M.alter (newCNOT Control cnot) ctrl $ bothHyp gs (n+1) (cnot-1)
       newCNOT hType cnot v = case v of Nothing -> Just [(nan,[(cnot-1,n)],n+1,hType)] -- n+1 because it finishes AFTER this gate
                                        Just ((_,ws,o,ht):es) -> 
                                           if ht==hType then Just ((nan,(cnot-1,n):ws,o,ht):es) -- Add the cnot to the hyperedge, as they are of the same type
@@ -199,7 +209,7 @@ buildHypRec (g:gs) n cnot = case g of
       getWire (Signed w s) = if s then w else error $ "DistribHPartError: Negative control" -- As Clifford+T only allows positive controls
   _ -> newHEdgeAt $ targetOf g
     where
-      newHEdgeAt wire  = M.alter newHEdge wire $ buildHypRec gs (n+1) cnot -- Subsequent CNOTs on 'wire' create a new hyperedge
+      newHEdgeAt wire  = M.alter newHEdge wire $ bothHyp gs (n+1) cnot -- Subsequent CNOTs on 'wire' create a new hyperedge
       newHEdge v = case v of Nothing -> Just [(nan,[],n,Unknown)]
                              Just ((_,ws,o,ht):es) -> Just ((nan,[],n,Unknown):(n+1,ws,o,ht):es)
       nan = 0
@@ -299,9 +309,8 @@ distributeCNOTs (c:cs) gs partition eDic = distributeCNOTs cs gs' partition eDic
       _ -> error "DistribHPartError: Failure when distributing CNOTs"
     (source, sink, pos, ht) = c 
     ebit = eDic M.! (source, partition !! sink, ht) - 1
-
-
--- ## Main program ## --
+    
+-- ## Building the distributed circuit ## --
 main = do
   (input,shape) <- Cfg.circuit
   let
@@ -330,7 +339,7 @@ main = do
             --print_generic Preview newCircuit shape
             putStrLn $ ""
             putStrLn $ "Gate count:"
-            print_generic GateCount newCircuit shape
+            print_generic Cfg.outputAs newCircuit shape
             putStrLn $ "Original gate count: " ++ show gateCountInput
             putStrLn $ "Original qubit count: " ++ show nWires
             putStrLn $ "Partition: " ++ show (take nWires partition)
