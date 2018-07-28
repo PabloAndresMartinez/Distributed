@@ -1,8 +1,0 @@
-#!/bin/bash
-
-rm Distributer
-quipper -O3 Distributer.hs Examples.hs config.hs
-./Distributer
-
-rm *o
-rm *hi

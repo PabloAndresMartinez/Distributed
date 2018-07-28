@@ -10,8 +10,9 @@ import System.Environment
 import Libraries.RandomSource
 import QuipperLib.Unboxing
 
+import Control.DeepSeq
 import qualified Data.Map as M
-import Data.List (sort, (!!))
+import Data.List (sort, sortBy, (!!))
 import qualified HSH as HSH
 import Distributer.Examples
 import qualified Distributer.Configuration as Cfg
@@ -255,8 +256,9 @@ buildCircuit partition hgraph oldCirc = (unencapsulate_generic newCirc, nWires, 
     newCirc = (inp,((ar1,gates',ar2,n+nWires),namespace),out)
 
 distribute :: [Gate] -> Partition -> Hypergraph -> ([Gate],Int,Int)
-distribute gates partition hypergraph = (allocateEbits components (distributeCNOTs cnots gates partition eDic) eDic, nWires, nEbits)
+distribute gates partition hypergraph = (allocateEbits components gatesWithCNOTs eDic 0, nWires, nEbits)
   where 
+    gatesWithCNOTs = distributeCNOTs cnots gates partition eDic 0
     cnots = nonLocalCNOTs gates partition hypergraph
     components = ebitInfo partition hypergraph
     nEbits = length components `div` 2
@@ -264,14 +266,15 @@ distribute gates partition hypergraph = (allocateEbits components (distributeCNO
     addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- We add to the dictionary only if wires can not be reused
 
 -- Note: The order how the components are added is essential. It must be from the end to the beginning.
-allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> [Gate]
-allocateEbits []     gates eDic = gates
-allocateEbits (c:cs) gates eDic = insert (allocateEbits cs gates eDic)
+allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> Int -> [Gate]
+allocateEbits []     gates eDic _    = gates
+allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits cs gatesTail eDic n
   where
+    gatesInit = take (n-prev) gates
+    gatesTail = drop (n-prev) gates
     ((source,bsink,htype), n, b) = (getConnections c, pos c, isEntangler c)
     sourceE = eDic M.! (source, bsink, htype) -- eBit wire for hyperedge 'source' (i.e. control if control type, target otherwise)
     sinkE = sourceE-1
-    insert gs = take n gs ++ component ++ drop n gs
     component = if htype==Control 
       then if b 
         then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
@@ -292,17 +295,19 @@ ebitInfo partition hypergraph = sort $ disentanglers ++ entanglers
     external (_,c,b,_,_) = partition !! c /= b
 
 nonLocalCNOTs :: [Gate] -> Partition -> Hypergraph -> [(Wire,Wire,Int,HedgeType)]
-nonLocalCNOTs gs partition hyp = filter (\(src,snk,_,_) -> partition !! src /= partition !! snk) cnots
+nonLocalCNOTs gs partition hyp = sortBy (\(_,_,pos1,_) (_,_,pos2,_) -> compare pos1 pos2) nonlocal
   where
     hedges = concat $ map (\(v,vss) -> map (\(_,ws,_,ht) -> (v,ws,ht)) vss) (M.toList hyp)
     cnots  = concat $ map (\(v,ws,ht) -> map (\(w,p) -> (v,w,p,ht)) ws) hedges 
+    nonlocal = filter (\(src,snk,_,_) -> partition !! src /= partition !! snk) cnots
 
-distributeCNOTs :: [(Wire,Wire,Int,HedgeType)] -> [Gate] -> Partition -> EDic -> [Gate]
-distributeCNOTs []     gs partition _    = gs
-distributeCNOTs (c:cs) gs partition eDic = distributeCNOTs cs gs' partition eDic
+distributeCNOTs :: [(Wire,Wire,Int,HedgeType)] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
+distributeCNOTs []     gs partition _    prev = gs
+distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs gsTail partition eDic pos
   where
-    gs' = take pos gs ++ [g'] ++ drop (pos+1) gs
-    g' = case (gs !! pos) of
+    gsInit = take (pos-prev) gs
+    gsTail = g' : drop (pos-prev+1) gs
+    g' = case gs !! (pos-prev) of
       (QGate "not" rev [target] [] [Signed ctrl True] ncf) -> if ht==Control 
         then QGate "not" rev [target] [] [Signed ebit True] ncf
         else QGate "not" rev [ebit]   [] [Signed ctrl True] ncf
@@ -312,20 +317,21 @@ distributeCNOTs (c:cs) gs partition eDic = distributeCNOTs cs gs' partition eDic
     
 -- ## Building the distributed circuit ## --
 main = do
-  (input,shape) <- Cfg.circuit
+  (input,shape, name) <- Cfg.circuit
   let
     k = Cfg.k; epsilon = Cfg.epsilon; mode = (Cfg.pullCNOTs, Cfg.bothRemotes)
     circ  = prepareCircuit input shape mode
     extractedCirc@(_, ((_,theGates,_,nWires),_), _) = encapsulate_generic id circ shape
     hypergraph = buildHyp theGates nWires mode
     fileData = hypToString hypergraph nWires
+    [hypHEdges, hypVertices, _] = (words . head . lines) fileData
     in
       if head fileData == '0' then do
-        writeFile "partition.hgr" $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
-        print_generic Preview circ shape
+        print_generic Cfg.outputAs circ shape
+        putStrLn $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
       else do
         writeFile "hypergraph.hgr" $ fileData
-        HSH.run $ "./KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
+        HSH.run $ Cfg.kahyparDir++"KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p "++Cfg.kahyparDir++"kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
         HSH.run $ "mv hypergraph.hgr.part* partition.hgr" :: IO ()
         hypPart <- readFile "partition.hgr"
         let 
@@ -345,5 +351,9 @@ main = do
             putStrLn $ "Partition: " ++ show (take nWires partition)
             putStrLn $ "Total number of ebits: " ++ show nEbits
             putStrLn $ ""
+            putStrLn $ "Number of vertices: " ++ hypVertices
+            putStrLn $ "Number of hyperedges: " ++ hypHEdges
+            putStrLn $ ""
+            putStrLn $ "Circuit: "++name
             putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs, " else "") ++ (if snd mode then "BothRemotes, " else "")
             putStrLn $ "k = "++show k++"; epsilon = "++show epsilon
