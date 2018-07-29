@@ -114,19 +114,19 @@ pullCNOTs :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> (qin -> C
 pullCNOTs circ shape = unencapsulate_generic (x,((arin,theGates',arout,w),ns),y)
   where
     (x,((arin,theGates,arout,w),ns),y) = encapsulate_generic id circ shape
-    theGates' = pullCNOTsRec theGates ([],[[] | _ <- [1..w]])
+    theGates' = pullCNOTsRec theGates emptyDic
+    emptyDic = M.fromList [(x,[]) | x <- [0..(w-1)]]
 
--- The second variable, 'past', holds the circuit up to the point that has been read, in reversed order. It has two components,
---   the first, npast (non-local past) is the earliest part of the circuit, which has already has some CNOTs in it.
+-- The second variable, 'past', holds the circuit up to the point that has been read, in reversed order. In 'pull', it has two components,
+--   the first, npast (non-local past) is the earliest part of the circuit, which already has some CNOTs in it.
 --   the second, lpast (local past) is the later parts comprised by 1-qubit gates, and maintained in a different list per wire.
-pullCNOTsRec :: [Gate] -> ([Gate],[[Gate]]) -> [Gate]
-pullCNOTsRec []     (npast,lpast) = reverse $ (concat lpast) ++ npast
-pullCNOTsRec (g:gs) (npast,lpast) = case g of
-  (QGate "not" _ [target] [] [signedCtrl] _) -> pullCNOTsRec gs $ (npast', updAt ctrl cpast' $ updAt target tpast' $ lpast)
+pullCNOTsRec :: [Gate] -> M.Map Wire [Gate] -> [Gate]
+pullCNOTsRec []     lpast = reverse $ (concat $ map (\(w,gs) -> gs) $ M.toList lpast)
+pullCNOTsRec (g:gs) lpast = case g of
+  (QGate "not" _ [target] [] [signedCtrl] _) -> (reverse npast') ++ (pullCNOTsRec gs $ M.insert ctrl cpast' $ M.insert target tpast' $ lpast)
     where
-      updAt w content list = take w list ++ [content] ++ drop (w+1) list
       ctrl = from_signed signedCtrl
-      (npast', tpast', cpast') = pull target ctrl (npast,lpast !! target,lpast !! ctrl)
+      (npast', tpast', cpast') = pull target ctrl ([],lpast M.! target,lpast M.! ctrl)
       pull t c (np, tp, (p:cp)) = let 
         (np',tp',cp') = pull t c (np,tp,cp) -- The resulting past circuit after pushing the CNOT to the end, if it passed through 'p'
         standardError = "DistribHPartError: "++show g++" is not handled when pulling CNOTs."
@@ -157,11 +157,13 @@ pullCNOTsRec (g:gs) (npast,lpast) = case g of
           (QPrep _ _)                    -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
           (QInit _ _ _)                  -> pull t c (p:tp++np, [], [])                            -- Can not be pulled through, flush the remaining gates
           _ -> error standardError     
-      pull _ _ (np, [], []) = (g:np, [], [])   
-  _ -> pullCNOTsRec gs (npast, updLPastAt $ targetOf g) -- If it's a 1-qubit gate, simply add it to the past  
-    where
-      updLPastAt w = take w lpast ++ (g:(lpast !! w)) : drop (w+1) lpast
-
+      pull _ _ (np, [], []) = (g:np, [], [])   -- If it's a 1-qubit gate: 
+  _ -> if Cfg.pullLimit < 0 || (length thisPast) < Cfg.pullLimit -- If pullLimit is infinite or larger than current memory,
+          then pullCNOTsRec gs $ M.insert w thisPast lpast  -- simply add it to the local past
+          else (reverse thisPast) ++ pullCNOTsRec gs (M.insert w [] lpast)  -- otherwise move the whole thing to the non-local past, if the memory limit is exceeded
+    where 
+      w = targetOf g
+      thisPast = g:(lpast M.! w)
 
 
 -- ## Building the hypergraph ## --
@@ -355,5 +357,5 @@ main = do
             putStrLn $ "Number of hyperedges: " ++ hypHEdges
             putStrLn $ ""
             putStrLn $ "Circuit: "++name
-            putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs, " else "") ++ (if snd mode then "BothRemotes, " else "")
+            putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs (limit: "++show Cfg.pullLimit++"), " else "") ++ (if snd mode then "BothRemotes, " else "")
             putStrLn $ "k = "++show k++"; epsilon = "++show epsilon

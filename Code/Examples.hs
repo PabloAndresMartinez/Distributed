@@ -56,8 +56,8 @@ gse = gse_C >>= \circ -> return (circ,(), "gse")
 gse_C :: IO (() -> Circ [Bit])
 gse_C = let 
   b        = 3 -- The number of precision qubits
-  m        = 4 -- The number of basis functions
-  occupied = 2 -- The number of occupied orbitals
+  m        = 8 -- The number of basis functions
+  occupied = 4 -- The number of occupied orbitals
   delta_e  = 6.5536 -- Energy range
   tau = 2*pi / delta_e -- The Hamiltonian scaling parameter
   e_max    = -3876.941 -- Maximum energy
@@ -66,7 +66,7 @@ gse_C = let
   -- Integral data hpq and hpqrs:
   h1_file  = "h_1e_ascii"
   h2_file  = "h_2e_ascii"
-  datadir  = "gseData/"
+  datadir  = "../../../../gseData/"
   in do
     gse_data <- GSEData.load_gse_data m (datadir++h1_file) (datadir++h2_file)
     return $ (\_ -> GSE.gse b m occupied gse_data tau e_max nfun orthodox)
@@ -88,7 +88,7 @@ usvR = return (usvR_C, (), "usvR")
 usvR_C :: () -> Circ USVDef.TwoPoint
 usvR_C _ = USV.algorithm_R b l m i0 p randomgen
   where
-    b = (replicate 5 (replicate 5 1))
+    b = (replicate 2 (replicate 2 1))
     l = ceiling $ USVDef.norm $ head b
     m = p-1
     i0 = 0
@@ -97,7 +97,7 @@ usvR_C _ = USV.algorithm_R b l m i0 p randomgen
     randomgen = mkStdGen 1234
 
 -- USV, circuit for the F subroutine (f_quantum)
-usvF_b = (replicate 5 (replicate 5 1))
+usvF_b = (replicate 2 (replicate 2 1))
 usvF :: IO (USVDef.TwoPoint -> Circ [QDInt], USVDef.TwoPoint, String)
 usvF = return (usvF_C,  twopoint_from_b, "usvF")
   where
@@ -113,8 +113,8 @@ usvF_C = USV.f_quantum usvF_b p m i0
     n_from_b = length usvF_b 
 
 -- USV, circuit for the G subroutine (g_quantum)
-usvG_b = (replicate 5 (replicate 5 1))
-usvG_n = 5
+usvG_b = (replicate 2 (replicate 2 1))
+usvG_n = 2
 usvG :: IO ([QDInt] -> Circ [QDInt], [QDInt], String)
 usvG = return (usvG_C, vector_from_b, "usvG")
   where
