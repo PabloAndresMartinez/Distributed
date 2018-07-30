@@ -1,0 +1,490 @@
+#!/bin/bash
+
+echo Circuit CNOTs NonLocal Ebits OrigQuits TotQubits Vertices Hyperedges >> data.txt
+echo "" >> data.txt
+
+cd qft10
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd qft25
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd qft50
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd qft100
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd qft200
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd bfWalk
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd bwt
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd gse
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..
+
+cd usvR
+cd k2
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k3
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k5
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../..
+cd k7
+cd 00
+../../../getData >> ../../../data.txt
+cd ..
+cd 01
+../../../getData >> ../../../data.txt
+cd ..
+cd 10
+../../../getData >> ../../../data.txt
+cd ..
+cd 11
+../../../getData >> ../../../data.txt
+cd ../../..

@@ -15,10 +15,11 @@ Note: it is always possible to do this because, per hyperedge, the "source" (i.e
 
 -}
 
-
+getNonLocal :: String -> String -> Int
 getNonLocal hypFile partFile = nonLocal
   where
-    partition = map read $ lines partFile
+    partition = map read $ lines partFile :: [Int]
+    partDic = M.fromList $ zip [1..] partition
     (headHyp:hyp) = lines hypFile
     [nEdges,nVertices, _] = map read $ words headHyp
     edges = map ((\(src:sinks) -> (src,sinks)) . map read . words) $ take nEdges hyp :: [(Wire,[Wire])]
@@ -33,12 +34,10 @@ getNonLocal hypFile partFile = nonLocal
         count [] = []
         count (x:ls) = let (xs,ls') = break (/=x) ls in (x,1+length xs) : count ls'
     cnots = concat $ map (\(src,sinks) -> map (\(snk,n) -> (src,snk,n)) sinks) edges'' :: [(Wire,Wire,Int)]
-    nonLocal = foldr (\(_,_,n) ac -> n+ac) 0 $ filter (\(p1,p2,_) -> p1/=p2) $ allocate cnots partition 1
+    nonLocal = foldr (\(_,_,n) ac -> n+ac) 0 $ filter (\(p1,p2,_) -> p1/=p2) $ allocate cnots
       where
-        allocate cs []     _ = cs
-        allocate cs (x:xs) i = allocate (map upd cs) xs (i+1)
-          where 
-            upd (a,b,n) = (if a==i then (-x) else a, if b==i then (-x) else b, n)
+        allocate []     = []
+        allocate ((w1,w2,n):cs) = (partDic M.! w1, partDic M.! w2, n) : allocate cs
 
 main = do
   hypFile <- readFile "hypergraph.hgr"

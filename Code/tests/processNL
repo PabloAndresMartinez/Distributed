@@ -1,6 +1,8 @@
 #!/bin/bash
 
-cd bfWalk
+## Done: qft10, qft25, qft50, bwt, bfWalk (this last one only k2 and k3) [For all of the problems, k2 00 is done]
+
+cd qft50
 
 cd k2
 cd 00

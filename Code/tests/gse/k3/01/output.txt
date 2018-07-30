@@ -29,3 +29,5 @@ Number of hyperedges: 92334
 Circuit: gse
 Extensions: BothRemotes, 
 k = "3"; epsilon = "0.03"
+
+Non-local CNOTs: 29350

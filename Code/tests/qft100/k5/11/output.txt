@@ -27,3 +27,5 @@ Number of hyperedges: 59598
 Circuit: qft 100
 Extensions: PullCNOTs (limit: -1), BothRemotes, 
 k = "5"; epsilon = "0.03"
+
+Non-local CNOTs: 42560

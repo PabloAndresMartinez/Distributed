@@ -28,3 +28,5 @@ Number of hyperedges: 84280
 Circuit: usvR
 Extensions: 
 k = "3"; epsilon = "0.03"
+
+Non-local CNOTs: 4665

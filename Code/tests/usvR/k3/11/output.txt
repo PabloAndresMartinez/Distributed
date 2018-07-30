@@ -28,3 +28,5 @@ Number of hyperedges: 160188
 Circuit: usvR
 Extensions: PullCNOTs (limit: 5), BothRemotes, 
 k = "3"; epsilon = "0.03"
+
+Non-local CNOTs: 5064
