@@ -29,3 +29,5 @@ Number of hyperedges: 7940
 Circuit: bwt
 Extensions: PullCNOTs, 
 k = "3"; epsilon = "0.03"
+
+Non-local CNOTs: 4200

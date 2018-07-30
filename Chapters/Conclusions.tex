@@ -1,0 +1,11 @@
+\chapter{Conclusions}
+
+\section{Further work}
+
+
+Better implementation (integrated in Quipper from a data-structure point of view; this should make the program faster)
+
+Introduce more functionality:
+  - CNOT interchange optimisation.
+  - Black boxes: Sometimes we know some part of the circuit requires a lot of interaction between some qubits. If we tell the algorithm in advance to consider that circuit fragment as a black box which can not be distributed, the hypergraph should be way simpler, and therefore the partitioner should be able to find a better overall distribution.
+  - Non-uniform partition: some QPUs get more vertices (this is trivial)

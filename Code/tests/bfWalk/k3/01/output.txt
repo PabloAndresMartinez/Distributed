@@ -26,3 +26,5 @@ Number of hyperedges: 39189
 Circuit: bfWalk
 Extensions: BothRemotes, 
 k = "3"; epsilon = "0.03"
+
+Non-local CNOTs: 3363

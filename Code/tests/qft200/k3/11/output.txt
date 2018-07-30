@@ -1,0 +1,29 @@
+
+Gate count:
+135490: "CDiscard"
+269828: "H, arity 1"
+155390: "Init0"
+135490: "Meas"
+ 33605: "S, arity 1"
+ 79600: "T*, arity 1"
+132776: "T, arity 1"
+ 19900: "Term0"
+  1167: "X, arity 1"
+ 67745: "X, arity 1", controls 1
+ 67745: "Z, arity 1", controls 1
+334490: "not, arity 1", controls 1
+Total gates: 1433226
+Inputs: 200
+Outputs: 200
+Qubits in circuit: 397
+Original gate count: 620286
+Original qubit count: 201
+Partition: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+Total number of ebits: 67745
+
+Number of vertices: 199201
+Number of hyperedges: 239198
+
+Circuit: qft 200
+Extensions: PullCNOTs (limit: -1), BothRemotes, 
+k = "3"; epsilon = "0.03"

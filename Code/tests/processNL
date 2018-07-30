@@ -1,0 +1,75 @@
+#!/bin/bash
+
+cd bfWalk
+
+cd k2
+cd 00
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 01
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 10
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 11
+runghc ../../../getNonLocal.hs
+cd ../..
+echo "Progress..."
+
+cd k3
+cd 00
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 01
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 10
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 11
+runghc ../../../getNonLocal.hs
+cd ../..
+echo "Progress..."
+
+cd k5
+cd 00
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 01
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 10
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 11
+runghc ../../../getNonLocal.hs
+cd ../..
+echo "Progress..."
+
+cd k7
+cd 00
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 01
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 10
+runghc ../../../getNonLocal.hs
+cd ..
+echo "Beep..."
+cd 11
+runghc ../../../getNonLocal.hs
+cd ../..
+echo "Progress..."

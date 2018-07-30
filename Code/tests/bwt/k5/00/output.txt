@@ -29,3 +29,5 @@ Number of hyperedges: 11476
 Circuit: bwt
 Extensions: 
 k = "5"; epsilon = "0.03"
+
+Non-local CNOTs: 6884

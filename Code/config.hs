@@ -4,10 +4,10 @@ import Distributer.Examples
 import Quipper.Printing
 
 -- Path to KaHyPar program
-kahyparDir = "../../../../"
+kahyparDir = "./"
 
 -- Partitioning parameters
-k = "7"
+k = "2"
 epsilon = "0.03"
 
 -- Set True to activate each extension, False to deactivate it
@@ -16,13 +16,13 @@ bothRemotes = True
 
 -- A limit to avoid going out of memory in circuits with a lot of consecutive 1-qubit gates (usually product of approximating a non-Clifford gate)
 pullLimit :: Int 
-pullLimit = 5 -- Set to -1 for infinite (i.e. no limit)
+pullLimit = -1 -- Set to -1 for infinite (i.e. no limit)
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = usvR
+circuit = interesting2
 
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
-outputAs = GateCount
+outputAs = Preview
 
 {- List of available values for circuit:
 
