@@ -29,4 +29,4 @@ Circuit: usvR
 Extensions: BothRemotes, 
 k = "5"; epsilon = "0.03"
 
-Non-local CNOTs: 16828
+Number of non-local CNOTs: 16181

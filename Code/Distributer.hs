@@ -10,7 +10,6 @@ import System.Environment
 import Libraries.RandomSource
 import QuipperLib.Unboxing
 
-import Control.DeepSeq
 import qualified Data.Map as M
 import Data.List (sort, sortBy, (!!))
 import qualified HSH as HSH
@@ -62,22 +61,6 @@ swapRemover (T_QGate "swap" 2 0 _ ncf f) = f $
         qnot_at q0 `controlled` q1
         return ([q0, q1], [], ctrls)
 swapRemover g = identity_transformer g
-
-{-
--- Given a partition, and a circuit with the required ebits already initialised, inject the necessary gates to achieve the distributed circuit
-gateInjections :: Partition -> Transformer Circ Qubit Bit
-gateInjections (partition, eDic) (T_QGate "not" 1 0 _ ncf f) = f $
-  \[target] [] [sourceEndpoint] -> do
-    without_controls_if ncf $ let 
-      bt = partition !! wire_of_qubit target; (Endpoint_Qubit ctrl) = from_signed sourceEndpoint; bc = partition !! wire_of_qubit ctrl in 
-        if bt == bc then do -- Internal
-          qnot_at target `controlled` ctrl
-          return ([target], [], [sourceEndpoint])
-        else do -- Inject using the assigned ebit
-          qnot_at target `controlled` (eDic M.! (wire_of_qubit ctrl,bt))
-          return ([target], [], [sourceEndpoint])
-gateInjections _ g = identity_transformer g
--}
 
 -- We need to transform the circuit into single qubit gates or two-qubit gates where one acts as control. The easiest is go to {CNOT,Rot}.
 --   If the boolean flag is True, Pauli gates are pushed through CNOTs

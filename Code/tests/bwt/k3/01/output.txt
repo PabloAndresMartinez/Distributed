@@ -30,4 +30,4 @@ Circuit: bwt
 Extensions: BothRemotes, 
 k = "3"; epsilon = "0.03"
 
-Non-local CNOTs: 5059
+Number of non-local CNOTs: 5048

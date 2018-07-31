@@ -28,4 +28,4 @@ Circuit: qft 50
 Extensions: 
 k = "3"; epsilon = "0.03"
 
-Non-local CNOTs: 5831
+Number of non-local CNOTs: 8180

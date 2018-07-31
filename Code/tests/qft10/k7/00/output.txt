@@ -28,4 +28,4 @@ Circuit: qft 10
 Extensions: 
 k = "7"; epsilon = "0.03"
 
-Non-local CNOTs: 288
+Number of non-local CNOTs: 402

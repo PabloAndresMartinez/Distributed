@@ -30,4 +30,4 @@ Circuit: gse
 Extensions: BothRemotes, 
 k = "3"; epsilon = "0.03"
 
-Non-local CNOTs: 29350
+Number of non-local CNOTs: 29220

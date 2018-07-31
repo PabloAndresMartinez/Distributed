@@ -29,4 +29,4 @@ Circuit: usvR
 Extensions: 
 k = "7"; epsilon = "0.03"
 
-Non-local CNOTs: 25448
+Number of non-local CNOTs: 26886

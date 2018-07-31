@@ -1,0 +1,24 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+  \pgfplotsset{ybar stacked}
+  \begin{axis}[
+      title=Varying the extensions enabled,
+      ylabel=\# / total CNOTs,
+      height=200pt,
+      width=350pt,
+      bar width=7pt,      
+      xtick={1,2,3,4,5},
+      xticklabels={bf,bwt,gse,usv,qft200},
+      legend pos=north west,
+      legend style={font=\small},
+      legend cell align={left}]
+    \addplot [preaction={fill, black!30}, pattern=north west lines, pattern color=black] table [x=X, y=EbitsProp]  {Code/tests/data1.dat};
+    \addplot [fill=black!30,] table [x=X, y=NonLocalPropDiff]  {Code/tests/data1.dat};
+    \addlegendentry{Ebits};
+    \addlegendentry{Non-local};
+  \end{axis}
+\end{tikzpicture}
+\caption{For each circuit, the bars correspond from left to right to: the vanilla algorithm, only \texttt{PullCNOTs} enabled, only \texttt{BothRemotes} enabled and both extensions enabled. Each bar shows the number of non-local CNOTs and ebits required, normalised over the total number of CNOTs the original circuit had. The partition parameters are: \(k\!=\!5,\,\varepsilon\!=\!0.03\).}
+\label{fig:results1}
+\end{figure}

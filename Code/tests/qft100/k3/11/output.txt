@@ -28,4 +28,4 @@ Circuit: qft 100
 Extensions: PullCNOTs (limit: -1), BothRemotes, 
 k = "3"; epsilon = "0.03"
 
-Non-local CNOTs: 31166
+Number of non-local CNOTs: 30674

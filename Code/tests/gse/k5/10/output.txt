@@ -30,4 +30,4 @@ Circuit: gse
 Extensions: PullCNOTs, 
 k = "5"; epsilon = "0.03"
 
-Non-local CNOTs: 22884
+Number of non-local CNOTs: 38780

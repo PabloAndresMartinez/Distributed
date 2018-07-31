@@ -1,0 +1,19 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+  \pgfplotsset{ybar}
+  \begin{axis}[
+      title={Varying \(k\in\{2,3,5,7\}\)},
+      ylabel=Ebit space / workspace,
+      ymin=0,
+      height=200pt,
+      width=350pt,
+      bar width=7pt,      
+      xtick={1,2,3,4,5},
+      xticklabels={bf,bwt,gse,usv,qft200}]
+    \addplot [fill=black!30,] table [x=X, y=PropQ]  {Code/tests/data4.dat};
+  \end{axis}
+\end{tikzpicture}
+\caption{For each circuit, the bars correspond from left to right to a value of \(k\): \(2\), \(3\), \(5\) and \(7\). Each bar shows the ratio between the hardware space that must be dedicated to communication (i.e.\ storing ebit halves) and the space dedicated to the computation itself. The results shown are for the best combination of enabled extensions in each case.}
+\label{fig:results1}
+\end{figure}

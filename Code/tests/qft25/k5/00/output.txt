@@ -28,4 +28,4 @@ Circuit: qft 25
 Extensions: 
 k = "5"; epsilon = "0.03"
 
-Non-local CNOTs: 1707
+Number of non-local CNOTs: 2360

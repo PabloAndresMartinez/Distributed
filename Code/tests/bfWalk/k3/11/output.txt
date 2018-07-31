@@ -27,4 +27,4 @@ Circuit: bfWalk
 Extensions: PullCNOTs, BothRemotes, 
 k = "3"; epsilon = "0.03"
 
-Non-local CNOTs: 3929
+Number of non-local CNOTs: 6565

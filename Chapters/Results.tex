@@ -39,13 +39,26 @@ Apart from these four programs, we will include in our test suite the circuit fo
 
 GHC version, -O2, Ubuntu...
 
-8GB RAM, quickest: 5min, longest 90min, mainly depending on the number of hyperedges.
+8GB RAM, quickest: 5min, longest 90min, mainly depending on the number of hyperedges (give numbers).
 
 %\subsection{}
 
-Comparison, for each example, between number of original CNOTs, number of hyperedges, number of non local CNOTs and number of ebits
+\input{Figures/Results/1}
 
-Discuss increase in wires
+% Our algorithm is doing good work if the number of ebits is considerably lower than the number of non-local gates.
+% Our extensions are doing good work when its ebit bar is lower than 00. Interestingly, sometimes the NonLocal count increases, and that's because a partition that cuts more non-local gates is found to be better as it uses less ebits!
+% 11 is always lower than 00 (even in BF), although sometimes it is larger than either 10 or 01 (explain why later). Interestingly, it's always at least the second best option, which indicates that if we don't know on advance, it's best to use both.
+% Effect of each extension
 
-Discuss hypergraph sizes then: Show with QFT for different sizes how at some point having both extensions is too much for the HypPart to handle
+\input{Figures/Results/2}
 
+% As the size of the hypergraph grows larger, KaHyPart is unable to find a proper partition when both extensions are active, as the hypergraph is too complex. In theory, 11 should always be better than 01.
+%This also happens with 11 vs 10, particularly in BWT (although almost non noticeable in that case)
+% Besides, it is interesting to see that the larger the circuit is, better BothRemote performs. This may just be a feature of QFT...
+
+\input{Figures/Results/3}
+
+
+\input{Figures/Results/4}
+
+%QFT does not seem to be prone to distribution. Others, such as gse, seem to be prone for massive distribution, as the drawback is only a payed at the start

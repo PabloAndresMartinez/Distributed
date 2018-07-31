@@ -30,4 +30,4 @@ Circuit: bwt
 Extensions: 
 k = "2"; epsilon = "0.03"
 
-Non-local CNOTs: 3264
+Number of non-local CNOTs: 3336

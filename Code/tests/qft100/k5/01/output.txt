@@ -28,4 +28,4 @@ Circuit: qft 100
 Extensions: BothRemotes, 
 k = "5"; epsilon = "0.03"
 
-Non-local CNOTs: 38138
+Number of non-local CNOTs: 38136

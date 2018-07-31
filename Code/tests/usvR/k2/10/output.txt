@@ -30,4 +30,4 @@ Circuit: usvR
 Extensions: PullCNOTs (limit: 5), 
 k = "2"; epsilon = "0.03"
 
-Non-local CNOTs: 1847
+Number of non-local CNOTs: 11000

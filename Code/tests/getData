@@ -21,7 +21,7 @@ T_qubits=$(awk -F ":" '{print $2}' <<< `grep "Qubits in circuit" output.txt`)
 O_qubits=$(awk -F ":" '{print $2}' <<< `grep "Original qubit count" output.txt`)
 
 ebits=$(awk -F ":" '{print $2}' <<< `grep "Total number of ebits" output.txt`)
-nonLocal=$(awk -F ":" '{print $2}' <<< `grep "Non-local CNOTs" output.txt`)
+nonLocal=$(awk -F ":" '{print $2}' <<< `grep "Number of non-local CNOTs" output.txt`)
 T_CNOTs=$(awk -F ":" '{print $1}' <<< `grep "not, arity 1" output.txt`)
 O_CNOTs=$(($T_CNOTs - $ebits * 2))
 

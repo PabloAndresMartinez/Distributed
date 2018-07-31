@@ -30,4 +30,4 @@ Circuit: gse
 Extensions: 
 k = "7"; epsilon = "0.03"
 
-Non-local CNOTs: 31905
+Number of non-local CNOTs: 49348

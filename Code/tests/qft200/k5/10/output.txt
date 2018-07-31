@@ -28,4 +28,4 @@ Circuit: qft 200
 Extensions: PullCNOTs (limit: -1), 
 k = "5"; epsilon = "0.03"
 
-Non-local CNOTs: 111258
+Number of non-local CNOTs: 157646
