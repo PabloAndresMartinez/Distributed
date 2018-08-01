@@ -79,10 +79,10 @@ getNonLocal gates partition = nonLocal
 main = do
   [path] <- getArgs
   putStrLn path
-  (circ,shape,_) <- qft 200
+  (circ,shape,_) <- bfWalk
   partFile <- readFile $ path++"partition.hgr"
   let
     (_,((_,theGates,_,nWires),_),_) = encapsulate_generic id (prepareCircuit circ shape) shape
     partition = map read $ lines partFile :: [Int]
-    in appendFile (path++"output.txt") $ "Number of non-local CNOTs: " ++ (show $ getNonLocal theGates partition)
+    in appendFile (path++"output.txt") $ "\nNumber of non-local CNOTs: " ++ (show $ getNonLocal theGates partition)
 

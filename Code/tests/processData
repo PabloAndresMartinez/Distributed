@@ -5,6 +5,7 @@ thefile=../../../data.dat
 cd bfWalk
 cd k2
 cd 00
+rm $thefile
 echo Circuit CNOTs NonLocal Ebits OrigQubits TotQubits Vertices Hyperedges >> $thefile
 echo "" >> $thefile
 ../../../getData >> $thefile
@@ -487,5 +488,35 @@ cd 10
 ../../../getData >> $thefile
 cd ..
 cd 11
+../../../getData >> $thefile
+cd ../../..
+
+cd bfWalk
+cd k10
+cd 10
+../../../getData >> $thefile
+cd ../../..
+
+cd bwt
+cd k10
+cd 10
+../../../getData >> $thefile
+cd ../../..
+
+cd gse
+cd k10
+cd 01
+../../../getData >> $thefile
+cd ../../..
+
+cd usvR
+cd k10
+cd 11
+../../../getData >> $thefile
+cd ../../..
+
+cd qft200
+cd k10
+cd 01
 ../../../getData >> $thefile
 cd ../../..

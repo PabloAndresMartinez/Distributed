@@ -172,7 +172,7 @@ On the pessimistic side, this means that unless \(P=NP\), finding the best distr
 A simple circuit, its optimally partitioned hypergraph and the resulting distributed circuit are shown in Figure~\ref{fig:vanillaExample}. The obtained distribution is the most efficient one, in the sense described in the beginning of this section. Each of the QPUs can be set to implement its own local circuit, distilling ebits and using them along classical communication whenever indicated.
 
 
-\subsection{Bringing CNOT gates together}
+\subsection{\texttt{SlideCNOTs}: Bringing CNOT gates together}
 \label{pullCNOTs}
 
 In \S\ref{NonLocalGates} we have shown that any 1-qubit gate in the Clifford+T set acting on the control wire of a CNOT gate, with the exception of the H gate, can commute with the CNOT up to some byproduct. Here we use this fact, applying some pre-processing on the input circuit that brings together nearby CNOT gates, allowing us to implement more non-local CNOT gates using a single ebit. Figure~\ref{fig:pulledCNOTexample} gives an example of how these transformations -- listed in Figure~\ref{fig:pullRules} -- can lead to a more efficient distribution of the circuit.
@@ -187,8 +187,16 @@ So far we have been talking about standard 1-qubit gates, but in practical circu
 
 The same procedure can be used to commute 1-qubit gates across the target wire of the CNOT gates, although in this case, apart from \(H\), \(S\) and \(T\) gates can not commute either. This additional pre-processing would have no effect at all on the vanilla version of the algorithm, but it will be beneficial after we apply our next extension, which requires CNOT gates to be adjacent on the target wire.
 
+\begin{remark} 
+Enabling \texttt{SlideCNOTs} will never increase the ebit count required to implement a partition.
 
-\subsection{Using the remote-target method}
+\normalfont
+This extension simply moves the CNOTs along their wires. The same CNOTs that were non-local without \texttt{SlideCNOTs} enabled will still be non-local. On the worst case, these non-local CNOTs could be implemented in the exact same way as they were before, so the ebit count would remain the same.
+
+\label{thm:SlideCNOTsImprove}
+\end{remark}
+
+\subsection{\texttt{EitherRemote}: Adding the remote-target method}
 \label{BothEnds}
 
 In \S\ref{NonLocalGates} we showed that the trick for implementing multiple CNOT gates using a single ebit also works if they share a common target wire (instead of the control wire). This makes our optimisation problem more intricate: Now, when the CNOTs are to be implemented non-locally, we can choose to implement them using the remote-control or remote-target method. For explanation purposes, we will use two different kinds of hyperedges in this subsection's figures, depending on whether their CNOTs are controlled by the same wire, or act on the same target (thicker line). 
@@ -303,6 +311,15 @@ The case illustrated in Figure~\ref{fig:farCNOT} can be seen intuitively as pass
 
 \item In case we wish to have a decentralised network, we will need to find a way to ensure the hypergraph partition we get has some kind of load-balancing the usage of ebits. Fortunately, there is a simple way to do this: instead of giving CNOT vertices weight \(0\) as we previously discussed, we may give them some weight \(\mu > 0\) that indicates how relevant communication load-balancing is in comparison to the uniformity of wire allocation across QPUs. Even better, we could use a custom version of the hypergraph partitioning problem where we provide three parameters instead of two, \(k,\varepsilon,\eta\), where now \(\varepsilon\) acts as the tolerance for imbalance of wire-vertices, while \(\eta\) is a separate tolerance for imbalance of CNOT-vertices, both tolerances being enforced in any partition.
 \end{enumerate}
+
+\begin{remark} 
+Enabling \texttt{EitherRemote} will never increase the ebit count required to implement a partition.
+
+\normalfont
+This extension simply changes how each non-local CNOT is implemented. On the worst case, these non-local CNOTs could still be implemented in the exact same way as they were before, so the ebit count would remain the same.
+
+\label{thm:BothEndsImprove}
+\end{remark}
 
 %Across the figures of this subsection we have drawn differently hyperedges that group CNOTs with remote-control or remote-target. However, it should be noticed that the hypergraph partitioner does not use this information at any point. This distinction is made for explanation purposes, and it is only relevant when building the distributed version of the circuit. 
 

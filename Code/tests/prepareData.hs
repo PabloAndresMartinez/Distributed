@@ -24,10 +24,10 @@ main = do
         propList [] = []
         propList (m00:m01:m10:m11:ls) = (showF $ prop m01 m00, showF $ prop m11 m00) : propList ls
     x3 = map show [0.7,0.9,1.1,1.3,1.7,1.9,2.1,2.3,2.7,2.9,3.1,3.3,3.7,3.9,4.1,4.3,4.7,4.9,5.1,5.3]
-    data3' = map (theData !!) [2,6,10,14,18,22,26,30,33,37,41,45,51,55,59,63,129,133,137,141]
+    data3' = map (theData !!) [6,10,14,144,22,26,30,145,37,41,45,146,55,59,63,147,133,137,141,148]
     data3 = map (\(x, [_,cnots,nonlocal,ebits,_,_,_,_]) -> [x, showF $ prop ebits cnots, showF $ (prop nonlocal cnots - prop ebits cnots)]) $ zip x3 data3'
     x4 = map show [0.7,0.9,1.1,1.3,1.7,1.9,2.1,2.3,2.7,2.9,3.1,3.3,3.7,3.9,4.1,4.3,4.7,4.9,5.1,5.3]
-    data4' = map (theData !!) [2,6,10,14,18,22,26,30,33,37,41,45,51,55,59,63,129,133,137,141]
+    data4' = map (theData !!) [6,10,14,144,22,26,30,145,37,41,45,146,55,59,63,147,133,137,141,148]
     data4 = map (\(x, [_,_,_,_,origQ,totalQ,_,_]) -> [x,showF $ (prop totalQ origQ - 1)]) $ zip x4 data4'
     in do
     writeFile "data1.dat" $ unlines $ "X EbitsProp NonLocalPropDiff" : (map unwords data1)

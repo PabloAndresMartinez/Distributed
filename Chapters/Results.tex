@@ -10,7 +10,7 @@ The code of our algorithm's implementation, all the generated executables and al
 
 The algorithm described in \S\ref{Vanilla} and its two extensions (\S\ref{pulCNOTs} and \S\ref{BothEnds}) have been implemented in Haskell. We chose Haskell because Quipper, a quantum circuit description language, is embedded on it. The quantum programs we use in our evaluation (see \S\ref{benchmark}) are all available as part of the Quipper system, so using Haskell we could easily manage them. Our implementation provides a Quipper circuit as output, and thus it can be integrated in any Quipper program. Besides, the hypergraph partitioning is performed by an specialised third-party software, \texttt{KaHyPart} \citep{KaHyPart}, that is called by our program when needed. A brief overview of \texttt{KaHyPart} is given in Appendix~\ref{HypPart}. 
 
-The main contributions of this thesis were described in Chapter~\ref{Project}. Our implementation is meant to be a demonstration of our algorithm, and it is intended for evaluation purposes only. Thus, efficiency was not a main concern. Nevertheless, it is efficient enough to manage circuits with up to \(300\) wires within a reasonable amount of resources (see \S\ref{Results}).
+The main contributions of this thesis were described in Chapter~\ref{chap:Project}. Our implementation is meant to be a demonstration of our algorithm, and it is intended for evaluation purposes only. Thus, efficiency was not a main concern. Nevertheless, it is efficient enough to manage circuits with up to \(300\) wires within a reasonable amount of resources (see \S\ref{Results}).
 
 Our implementation receives a circuit described in Quipper's internal data structure and outputs its distributed version, also in Quipper's format. However, along the process the circuit is managed as a list of gates, rather than using Quipper's internal data structure. This is the main cause of inefficiencies in our code. Quipper is presented to its users as a language to define circuits, rather than a language to define circuit transformations. Therefore, there are not enough functionalities available at user-level to fully implement our algorithm within Quipper. If we intended to achieve better efficiency, we would require to learn the internal workings -- the back-end -- of Quipper, which is beyond the scope of this thesis.
 
@@ -32,33 +32,61 @@ The quantum programs we will use to evaluate our algorithm are available as part
 \item \textit{Unique Shortest Vector (USV)}: \citet{USV} proposed a problem where some characteristic vector of an input lattice must be found. This problem requires a large amount of resources, so we only consider a part of it, labelled `R' in Quipper's library. We reduced the default dimension of the lattice from \(5\) to \(2\). Implemented by N. Ross.
 \end{itemize}
 
-Apart from these four programs, we will include in our test suite the circuit for the \textit{Quantum Fourier Transform (QFT)}. The QFT is a key component of many quantum algorithms, Shor's factorisation algorithm being one of them. Its implementation is also provided in Quipper's libraries. In \S\ref{Results} we consider the QFT for different values of the dimension parameter \(N\), with the corresponding circuit having \(N+1\) qubits.
+Apart from these four programs, we will include in our test suite the circuit for the \textit{Quantum Fourier Transform (QFT)}. The QFT is a key component of many quantum algorithms, Shor's factorisation algorithm being one of them. Its implementation is also provided in Quipper's libraries. In \S\ref{Results} we consider QFT-\(N\), for different values of \(N\), to refer to the QFT circuit of dimension \(N\), which uses \(N+1\) qubits.
 
 \section{Results}
 \label{Results}
 
-GHC version, -O2, Ubuntu...
+Our code was compiled using GHC version 8.0.2, with the optimisation flag \texttt{-O2} active. The tests we discuss in this section were run each on a single core of a i7-4710HQ processor, with 8GB of available RAM, on a Ubuntu 16.04 machine. The time it takes to distribute a circuit mainly depends on the number of CNOT gates it has. Table~\ref{tab:time} shows the CNOT count and how long it takes to run the algorithm for each of the tests we discuss in this section. Beyond certain circuit size -- around \(50,000\) CNOTs --, the time it takes is considerably long. This is because our code was not implemented with scalability as a concern, rather than a characteristic of the algorithm itself.
 
-8GB RAM, quickest: 5min, longest 90min, mainly depending on the number of hyperedges (give numbers).
+\begin{table}
+\caption{CNOT count and the CPU time it takes to distribute each of the circuits discussed in this section. The data shown corresponds to executions with both extensions \texttt{pullCNOTs} and \texttt{EitherRemote} enabled and using distribution parameters \(k\!=\!5,\ \varepsilon\!=\!5\).}
+\label{tab:time}
+\centering
+\vspace*{3mm}
+\begin{tabular}{|c|r|r|}
+\hline
+\textit{Circuit} & \textit{CNOTs} & \textit{Time (s)} \\
+\hline
+{\small BF} & 25,590 & 64 \\
+{\small BWT} & 13,824 & 15 \\
+{\small GSE} & 70,158 & 675 \\
+{\small USV} & 101,806 & 1273\\
+\hline
+\end{tabular}
+\hspace{10mm}
+\begin{tabular}{|c|r|r|}
+\hline
+\textit{Circuit} & \textit{CNOTs} & \textit{Time} \\
+\hline
+{\small QFT-\(10\)} & 450 & 0.6 \\
+{\small QFT-\(25\)} & 3,000 & 3 \\
+{\small QFT-\(50\)} & 12,250 & 17 \\
+{\small QFT-\(100\)} & 49,500 & 255 \\
+{\small QFT-\(200\)} & 199,000 & \textbf{TODO}\\
+\hline
+\end{tabular}
+\end{table}
 
-%\subsection{}
+Figure~\ref{fig:results1} shows, for different circuits, the proportion of CNOTs that become non-local once the circuit is partitioned. We also display the proportion of ebits the circuit requires. The key idea behind our algorithm was to take advantage of the remote-control and/or remote-target methods to implement multiple CNOTs using a single ebit. The larger the difference between the two proportions shown in Figure~\ref{fig:results1} is, the better this idea has paid off. However, the definitive measure of success -- and what our algorithm aims to optimise -- is the proportion of ebits itself. 
 
 \input{Figures/Results/1}
 
-% Our algorithm is doing good work if the number of ebits is considerably lower than the number of non-local gates.
-% Our extensions are doing good work when its ebit bar is lower than 00. Interestingly, sometimes the NonLocal count increases, and that's because a partition that cuts more non-local gates is found to be better as it uses less ebits!
-% 11 is always lower than 00 (even in BF), although sometimes it is larger than either 10 or 01 (explain why later). Interestingly, it's always at least the second best option, which indicates that if we don't know on advance, it's best to use both.
-% Effect of each extension
+Each of the four bars shown for every circuit corresponds to a different configuration of extensions enabled (from left to right): the vanilla algorithm, only \texttt{SlideCNOTs} enabled, only \texttt{EitherRemote} enabled and both extensions enabled. Among the four configurations, the best one is that whose proportion of ebits is the lowest\footnote{Notice that for a given circuit, the number of CNOTs in it is independent of the extensions enabled. Thus, the number of ebits is normalised by the same value for each of the four configurations.}. Interestingly, in cases such as BWT when \texttt{SlideCNOTs} is enabled, the algorithm may find a more efficient solution by partitioning the circuit in a way that increases the amount of non-local CNOTs, but ultimately reduces the number of ebits.
+
+As discussed in Remarks~\ref{thm:SlideCNOTsImprove} and~\ref{thm:BothEndsImprove}, in theory, enabling any of the two extensions should never increase the ebit count. However, Figure~\ref{fig:results1} shows that this does not hold in practice. This is because we were assuming that the optimal solution to the hypergraph partitioning problem was always found, but this is not the case in practice. Considering the hypergraph partitioning problem is NP-complete, a partitioner that ensures that the optimal solution is found can not possibly be efficient (unless \(P=NP\)). Whenever an extension is enabled, partitioning the hypergraph becomes a more complex task: \texttt{SlideCNOTs} increases the number of vertices reached by each hyperedge, while \texttt{EitherRemote} creates a hypergraph at least as twice as large. The problem in cases such as QFT-\(200\) is that one of the extensions (\texttt{EitherRemote} in this case) does exceptionally well, while the other has little impact. Then, when both are enabled, the latter extension essentially only makes the partitioner's job more difficult, and when the hypergraph is large enough, this results in the partitioner yielding a worse solution. Figure~\ref{fig:results2} makes this evident, as for QFT with dimension \(25\) and lower, enabling both extensions is best: the hypergraph is small enough for the partitioner to find the optimal solution. 
 
 \input{Figures/Results/2}
 
-% As the size of the hypergraph grows larger, KaHyPart is unable to find a proper partition when both extensions are active, as the hypergraph is too complex. In theory, 11 should always be better than 01.
-%This also happens with 11 vs 10, particularly in BWT (although almost non noticeable in that case)
-% Besides, it is interesting to see that the larger the circuit is, better BothRemote performs. This may just be a feature of QFT...
+Still, in all of our tests, enabling any combination of extensions was always better than running the algorithm with none. In practice, we would distribute the circuit with different extensions enabled, and choose the best one. Considering that, in all of our tests, enabling both extensions was always in the top two best configurations, we would propose it as the default configuration to use. This is similar to how classical compilers provide a default set of optimisation flags (e.g.\ \(-O2\)), but you may obtain a more efficient object code if you disable some of these flags manually.
 
 \input{Figures/Results/3}
 
+Figure~\ref{fig:results3} shows the same information as in Figure~\ref{fig:results1}, but now the different bars correspond to different values of the parameter \(k\) -- the number of QPUs the circuits are distributed across. For each circuit, its best configuration of extensions is used. As we would expect, distributing the circuit across more QPUs makes more CNOTs non-local and, correspondingly, the ebit count also increases. However, we can see how this increase is not necessarily uniform: When distributing the GSE circuit, the number of non-local gates and ebits required to distribute it across \(10\) QPUs is almost the same as if we distribute across \(7\) QPUs. The opposite situation happens for the BF circuit, as it seems to have a natural way of being partitioned across up to \(7\) QPUs -- possibly because the qubits form groups that, for the most part, work isolated from other groups --, but beyond \(10\) QPUs wires that communicate intensively have to be separated -- as a single QPU can not hold all of the qubits in a group. Still, in this particular case our algorithm manages to maintain a low ebit count. 
 
 \input{Figures/Results/4}
+
+Finally, Figure~\ref{fig:results4} shows the ratio between QPU space dedicated to communication (ebit space) versus space dedicated to computation (workspace qubits). A lower ratio is more desirable, as we want as much computation space as possible. Naturally, the ratio is worse as we increase the number of QPUs we distribute across, because the workspace required stays the same, while more ebits are needed (as we just saw in Figure~\ref{fig:results3}). Therefore, there is a tension here, as we would like to use as many QPUs as possible, but we want them to manage a small space each. Figure~\ref{fig:results4} shows that this tension is different for each circuit: In cases such as BWT and GSE, the ratio barely changes, so if we decide to distribute them, we should use a large amount of QPUs. On the other hand, circuits such as QFT-\(200\) are not good candidates for distribution, as using only \(3\) QPUs already doubles the amount of space needed, and the ratio keeps increasing for larger \(k\).
+
 
 %QFT does not seem to be prone to distribution. Others, such as gse, seem to be prone for massive distribution, as the drawback is only a payed at the start

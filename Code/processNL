@@ -1,39 +1,6 @@
 #!/bin/bash
 
-program=qft200
-k=k2
-mode=00
-./getNonLocal tests/$program/$k/$mode/
-mode=01
-./getNonLocal tests/$program/$k/$mode/
+program=bfWalk
+k=k10
 mode=10
-./getNonLocal tests/$program/$k/$mode/
-mode=11
-./getNonLocal tests/$program/$k/$mode/
-k=k3
-mode=00
-./getNonLocal tests/$program/$k/$mode/
-mode=01
-./getNonLocal tests/$program/$k/$mode/
-mode=10
-./getNonLocal tests/$program/$k/$mode/
-mode=11
-./getNonLocal tests/$program/$k/$mode/
-k=k5
-mode=00
-./getNonLocal tests/$program/$k/$mode/
-mode=01
-./getNonLocal tests/$program/$k/$mode/
-mode=10
-./getNonLocal tests/$program/$k/$mode/
-mode=11
-./getNonLocal tests/$program/$k/$mode/
-k=k7
-mode=00
-./getNonLocal tests/$program/$k/$mode/
-mode=01
-./getNonLocal tests/$program/$k/$mode/
-mode=10
-./getNonLocal tests/$program/$k/$mode/
-mode=11
 ./getNonLocal tests/$program/$k/$mode/
