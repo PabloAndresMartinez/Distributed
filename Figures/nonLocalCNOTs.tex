@@ -8,7 +8,8 @@
   \coordinate[below left=7mm and -6mm of circuit.west] (leftPoint);
   \coordinate[right=130.5mm of leftPoint] (rightPoint);
   \pic (cut) {cut=leftPoint/rightPoint};
+  \node[font=\small\itshape, opacity=0.9, below right=7.7mm and -4.5mm of leftPoint] (W) {W};
 \end{tikzpicture}
-\caption{Implementing multiple non-local CNOTs using a single ebit. The bottom-most wire acts as control for the three of them. Only classical information crosses the boundary between QPUs.}
+\caption{Implementing three non-local CNOTs using a single ebit. Wire \(W\) acts as control for the three of them. Only classical information crosses the boundary between QPUs, apart from the previously shared ebit.}
 \label{fig:nonlocalCNOTs}
 \end{figure}

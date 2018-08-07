@@ -12,6 +12,8 @@
       \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=11.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {c)};
+      \node[below right=8.2mm and 55.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=7.1mm and 66.1mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[above left=-3mm and -70mm of distributed] (template) {
@@ -24,6 +26,8 @@
       \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
+      \node[below right=7.5mm and 15.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[below right=7.5mm and 25.7mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[above right=-26.5mm and 10mm of template] (hypergraph) {
@@ -45,7 +49,7 @@
     \end{tikzpicture}
   };
 \end{tikzpicture}
-\caption{The CNOTs in the circuit \textit{a)} are adjacent at their control wire. Therefore, a single hyperedge is used to represent both in \textit{b)}. The proposed cut makes only one of the CNOTs non-local, which is implemented in \textit{c)} using one ebit.}
+\caption{The CNOTs in circuit \textit{a)}, labelled \(\alpha\) and \(\beta\), are adjacent at their control wire. Therefore, a single hyperedge is used to represent both in \textit{b)}. The proposed cut makes only one of the CNOTs non-local, which is implemented in \textit{c)} using one ebit.}
 \label{fig:vanillaCutsA}
 \end{figure}
 
@@ -63,6 +67,8 @@
       \node[above left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=11.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {c)};
+      \node[above right=0.8mm and 55.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=7.1mm and 66.1mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[above left=-3mm and -70mm of distributed] (template) {
@@ -75,6 +81,8 @@
       \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
+      \node[below right=7.5mm and 15.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[below right=7.5mm and 25.7mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[above right=-30mm and 10mm of template] (hypergraph) {
@@ -96,7 +104,7 @@
     \end{tikzpicture}
   };
 \end{tikzpicture}
-\caption{Same as in Figure~\ref{fig:vanillaCutsA}, but now the cut makes both CNOTs non-local. Still, only one ebit is required, as implied by the hypergraph \textit{b)}. When CNOTs share their control wire, an ebit is required iff any of the target wires is in a different QPU than the control wire's QPU.}
+\caption{Same as in Figure~\ref{fig:vanillaCutsA}, but now the cut makes both CNOTs non-local. Still, only one ebit is required, as implied by hypergraph \textit{b)}.}
 \label{fig:vanillaCutsB}
 \end{figure}
 
@@ -116,6 +124,8 @@
       \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
+      \node[below right=7.5mm and 15.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[below right=7.5mm and 25.7mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[above right=-28mm and 10mm of template] (hypergraph) {
@@ -155,11 +165,13 @@
       \node[above left=18.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(A\)};
       \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
       \node[below left=18.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
+      \node[below right=1.2mm and 55.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=14.1mm and 108.1mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
     \end{tikzpicture}
   };
   \node[right=-3mm of distributed.north west, font=\itshape] (text) {c)};
 \end{tikzpicture}
 \vspace*{38mm}
-\caption{Same as in Figure~\ref{fig:vanillaCutsA}, but now there are two cuts, distributing the circuit across three QPUs.}
+\caption{Same as in Figure~\ref{fig:vanillaCutsA}, but now there are two cuts, distributing the circuit across three QPUs. Hence, two ebits are required.}
 \label{fig:vanillaCutsC}
 \end{figure}

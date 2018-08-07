@@ -4,27 +4,27 @@
 \section{Implementing non-local CNOT gates}
 \label{NonLocalGates}
 
-In \S\ref{IntroDistributing}, we explained the proposal by~\citet{NonLocalCNOT} of how to implement a non-local gate. We will now extend their results.
+In \S\ref{IntroDistributing}, we explained the proposal by~\citet{NonLocalCNOT} of how to implement a non-local gate. In their work, a single ebit could be used to implement multiple CNOTs only if they shared a common control wire, and no operation was applied on it between the CNOTs. We will now extend their results.
 
-In order to implement multiple non-local gates using a single ebit, there must be no operation on the control qubit between the non-local gates. Our first extension comes from the fact that some of the 1-qubit gates from the Clifford+T set commute with the CNOT gate. This means that, if there are operations in between CNOTs, we may transform the circuit to an equivalent version where the CNOT gates are brought together. All of the relevant circuit transformations are shown in Figure~\ref{fig:pullRules}. Some gates do not commute with the CNOT, but we can still interchange them if we add an extra 1-qubit gate. %These can be checked by calculating the corresponding matrices of both sides and verifying they match.
+Our first extension comes from the fact that some of the 1-qubit gates from the Clifford+T set commute with the CNOT gate. This means that, if there are operations in between CNOTs, we may transform the circuit to an equivalent version where the CNOT gates are brought together. All of the relevant circuit transformations are shown in Figure~\ref{fig:pullRules}. As also shown in Figure~\ref{fig:pullRules}, some gates do not commute with CNOT, but we can still interchange them if we add an extra 1-qubit gate. %These can be checked by calculating the corresponding matrices of both sides and verifying they match.
 
 \input{Figures/PullRules}
 
-The second improvement comes by realising that the method used to implement multiple CNOT gates controlled by the same wire (explained in \S\ref{IntroDistributing}) can also be applied if multiple CNOTs have a common target qubit instead. We will refer to the former method as the \textit{remote-control} method, and we will refer to the later as the \textit{remote-target} method. The derivation of the remote-target method is shown in Figure~\ref{fig:CNOTtargetProof}, which uses some of the properties listed in \S\ref{Models}. The main difference is that the CNOT itself is now applied in the control QPU instead of the target, so the cat-entangler and cat-disentangler must change accordingly.
+The second improvement comes by realising that the method used to implement multiple CNOT gates controlled by the same wire can also be applied if multiple CNOTs have a common target qubit instead. We will refer to the former method as the \textit{remote-control} method, and to the latter as the \textit{remote-target} method. The derivation of the remote-target method is shown in Figure~\ref{fig:CNOTtargetProof}, which uses some of the properties listed in Figure~\ref{fig:props}.
 
 \input{Figures/TargetProof}
 
 \section{Finding an efficient distribution}
 \label{EfficientDistrib}
 
-In this section we explain how we search for a suitable distribution of the circuit. But first, we establish what we mean by a distributed circuit to be efficient. This is based on our discussiong in \S\ref{DQC_Architecture} about the characteristics of any distributed quantum architecture.We say that a distributed circuit is efficient when there is:
+In this section we explain how we search for an efficient distribution of the circuit. First, we establish what we mean by a distributed circuit to be efficient. This notion is based on our discussion about the essential characteristics of distributed quantum architectures (see \S\ref{DQC_Architecture}). We say that a distributed circuit is efficient when there is:
 
 \begin{itemize}
   \item \textit{Minimal amount of quantum communication} between the QPUs, meaning it requires as little number of ebits as possible. In comparison, message passing of classical bits is considered negligible and it is not taken into account.
-  \item \textit{Load-balance across the QPUs}, up to a tolerance margin. Our notion of load-balance is that the different QPUs have a similar number of qubits assigned to them. A uniform depth of the local circuits (i.e.\ length of the circuits) would be desirable. However, the distributed circuit depth is inherited from the original circuit, as none of our distribution techniques change the depth in a significant way. Hence, we will not take circuit depth into account, and instead assume that already known methods for depth reduction, such as the one described by~\citet{DepthReduction}, have already been applied on the input circuit, and may be applied again to each QPU's local circuit. As circuit depth is not something we aim to optimise, we consider the cost of local gates negligible.
+  \item \textit{Load-balance across the QPUs}, up to a tolerance margin. Our notion of load-balance is that the different QPUs should have a similar number of qubits assigned to them. Uniform depth of the local circuits (i.e.\ length of the circuits) would also be desirable. However, none of our distribution techniques change the depth in a significant way. Hence, we will not optimise circuit depth when distributing a circuit, and instead assume that methods for depth reduction, such as the one described by~\citet{DepthReduction}, have already been applied on the input circuit, and may be applied again to each QPU's local circuit. As we do not take into account circuit depth, we consider the cost of local gates negligible.
 \end{itemize}
 
-The problem at hand is similar to the  \textit{(\(k,\varepsilon\))-graph partitioning} problem. In it, a graph partition in \(k\) subgraphs has to be found, minimising the number of \textit{cut edges}: edges that have their incident vertices in different subgraphs. Additionally, the resulting partition must satisfy that the number of vertices in each subgraph is less than \((1 \pm \varepsilon)\frac{N}{k}\), where \(N\) is the total number of vertices in the graph. In Table~\ref{tab:matching} we list the correspondences between these two problems.
+The problem at hand is similar to the  \textit{(\(k,\varepsilon\))-graph partitioning} problem. In it, a graph partition in \(k\) subgraphs has to be found, minimising the number of \textit{cut edges}: edges that have their incident vertices in different subgraphs. Additionally, the partition must satisfy that the number of vertices in each subgraph is less than \((1 \pm \varepsilon)\frac{N}{k}\), where \(N\) is the total number of vertices in the graph. In Table~\ref{tab:matching} we list the correspondences between the graph partitioning problem and the efficient distribution of quantum circuits.
 
 \begin{table}
 \caption{Correspondence between the graph partitioning problem and the efficient distribution of quantum circuits.}
@@ -34,7 +34,7 @@ The problem at hand is similar to the  \textit{(\(k,\varepsilon\))-graph partiti
 \hline
 \textit{Graph partitioning} & \textit{Efficient distribution} \\
 \hline
-Vertices & Circuit wires \\
+Vertices & Circuit wires (qubits) \\
 Edges & CNOT gates \\
 Partitioned graph & Distributed circuit \\
 Subgraph & QPU \\
@@ -44,19 +44,19 @@ Uniform subgraph size & Load-balance \\
 \end{tabular}
 \end{table}
 
-But there is a caveat. If we use graph partitioning naively, we will not be exploiting the fact that multiple CNOT gates may be implemented using a single ebit. In what follows, we will explain how to make use of \textit{hypergraph} partitioning, instead of simple graph partitioning, to account for this aspect. A more detailed review of the hypergraph partition problem is given in Appendix~\ref{chap:HypPart}, here we summarise the key concepts:
+But there is a caveat. If we use graph partitioning naively, we will not be exploiting the fact that multiple CNOT gates may be implemented using a single ebit. In what follows, we will explain how to make use of \textit{hypergraph} partitioning, to account for this aspect. A more detailed review of the hypergraph partition problem is given in Appendix~\ref{chap:HypPart}, here we summarise the key concepts:
 
 \begin{itemize}
-  \item Hypergraphs extend graphs to accommodate edges that may have more than two incident vertices. More formally, a hypergraph is a pair \((V,H)\), where \(V\) is the set of vertices and \(H \subseteq 2^V\) is the collection\footnote{\, We will allow multiple hyperedges connecting the same vertices, in the same way as multigraphs allow multiple edges across any pair of edges.} of hyperedges. Each hyperedge is represented as the subset of vertices from \(V\) it connects. We will not consider any notion of directionality.
-  \item Hypergraph partitioning follows the same premise as graph partitioning. The user provides a hypergraph and two parameters \((k,\varepsilon)\), which have the exact same meaning as before. What the problem now attempts to minimise is a metric known as \(\lambda\!-\!1\), which is defined as follows: Given a partition of the hypergraph, the function \(\lambda\colon\, H \to \mathbb{N}\) pairs each hyperedge with the number of different \textit{blocks}\footnote{\, The term \textit{block} is often used to refer to each of the sub-hypergraphs that comprise the hypergraph partition. It is the term we will use throughout this thesis.} its vertices are in. Then, \(\lambda\!-\!1 = \sum_{h \in H} \lambda(h) - 1\) provides a measure of not only how many hyperedges are cut but also how many blocks are they connecting\footnote{\, Simply minimising the number of cut hyperedges is also an often used approach, but it is not as useful for our problem.}.
+  \item Hypergraphs extend graphs to accommodate edges that may have more than two incident vertices. More formally, a hypergraph is a pair \((V,H)\), where \(V\) is the set of vertices and \(H \subseteq 2^V\) is the collection\footnote{We will allow the existence of multiple identical hyperedges, in the same way as multigraphs allow multiple edges across a pair of edges.} of hyperedges. Each hyperedge is defined as the subset of vertices from \(V\) it connects. We will not consider any notion of directionality.
+  \item Hypergraph partitioning follows the same premise as graph partitioning. The user provides a hypergraph and two parameters \((k,\varepsilon)\), which have the exact same meaning as before. What the problem now attempts to minimise is a metric known as \(\lambda\!-\!1\), which is defined as follows: Given a partition of the hypergraph, the function \(\lambda\colon\, H \to \mathbb{N}\) maps each hyperedge to the number of different \textit{blocks}\footnote{The term \textit{block} is often used to refer to each of the sub-hypergraphs the hypergraph is partitioned into. It is the term we will use throughout this thesis.} its vertices are in. Then, \(\lambda\!-\!1 = \sum_{h \in H} \lambda(h) - 1\) provides a measure of not only how many hyperedges are cut but also how many blocks they are connecting\footnote{Simply minimising the number of cut hyperedges is also an often used approach, but it is not as useful for our problem.}.
 \end{itemize}
 
-In the following subsections, we explain how hypergraph partitioning can be used to find the best distribution of a circuit. First, we only use the implementation of non-local gates described by~\citet{NonLocalCNOT} reviewed in \S\ref{IntroDistributing}. Later on, we extend the algorithm to include the improvements we have proposed in \S\ref{NonLocalGates}.
+In the following subsections, we explain how hypergraph partitioning can be used to find the most efficient distribution of a circuit. First, we only use the implementation of non-local gates described by~\citet{NonLocalCNOT}, reviewed in \S\ref{IntroDistributing}. Later on, we extend the algorithm to include the improvements we have proposed in \S\ref{NonLocalGates}.
 
 \subsection{Vanilla algorithm}
 \label{Vanilla}
 
-The key challenge is how to use hyperedges to represent a collection of CNOT gates that, in case of being non-local, they could all be implemented using a single ebit. In this first version of the algorithm, we will group CNOTs together only if they have a common control wire and there are no other gates in between their connections to that wire. We will create \textit{a single hyperedge} for every such a collection of CNOT gates. The hyperedge's vertices will correspond to the controlling wire and each of the different wires the CNOT gates target. Algorithm~\ref{code:buildHypVanilla} receives a circuit as input and builds its hypergraph in that way. 
+The main challenge is how to use hyperedges to represent a collection of CNOT gates that, in case of being non-local, they could all be implemented using a single ebit. In this first version of the algorithm, we will group CNOTs together only if they share a common control wire and there are no other gates in between their connections to that wire. For every such a collection of CNOT gates, we will create \textit{a single hyperedge}. The hyperedge's vertices will correspond to the controlling wire and each of the different wires the CNOTs target. Algorithm~\ref{code:buildHypVanilla} receives a circuit as input and builds its hypergraph in this way. 
 
 \begin{algorithm}[caption={Builds the hypergraph of a given circuit. \(H\) may contain multiple hyperedges connecting the same vertices. This algorithm runs in time \(O(g)\), where \(g\) is the number of gates in the input circuit.}, label={code:buildHypVanilla}]
 input: circuit
@@ -67,7 +67,6 @@ begin
   hedge $\gets$ $\varnothing$
   foreach wire in circuit do
     V $\gets$ V $\cup$ {wire}
-    H $\gets$ H $+$ {hedge}
     hedge $\gets$ {wire}
     foreach gate in wire do
       if gate == CNOT and $controlOf$(gate) == wire then
@@ -75,12 +74,13 @@ begin
       else
         H $\gets$ H $+$ {hedge}
         hedge $\gets$ {wire}
+    H $\gets$ H $+$ {hedge}
 end
 \end{algorithm}
 
 %Besides, it may be surprising that our hyperedges do not indicate which of the vertices is the control wire. That information is irrelevant at the partitioning level: each time a hyperedge is cut, we will require an ebit to implement the non-local gates, no matter which QPU the control wire is assigned to. Such information is only relevant when transforming the circuit into its distributed form, which is the next step of our algorithm. 
 
-We then solve the hypergraph partitioning problem (see Appendix~\ref{chap:HypPart}) on the resulting hypergraph. Once an efficient partition of the hypergraph is obtained, we map the partition back to the circuit, distributing it. The way the vertices are assigned in the blocks determines how the corresponding wires are allocated to the different QPUs. The \(\lambda-1\) metric of the partition indicates the number of ebits that will be necessary to implement all the non-local CNOT gates. Hence, the problem of finding the optimal partition for a hypergraph built by Algorithm~\ref{code:buildHypVanilla}, and the problem of efficiently\footnote{Where efficiency is assessed as discussed in the beginning of this section.} distributing a circuit are equivalent -- given any solution to one of them, we can compute a solution for the other. We formalise this fact in the following theorem:
+We then solve the hypergraph partitioning problem (see Appendix~\ref{chap:HypPart}) on the resulting hypergraph. Once a partition of the hypergraph is obtained, we map the partition back to the circuit, distributing it. The way the vertices are assigned in the blocks determines how the corresponding wires are allocated to the different QPUs. The \(\lambda-1\) metric of the partition indicates the number of ebits that will be necessary to implement all the non-local CNOT gates. The problem of finding the optimal partition for a hypergraph built by Algorithm~\ref{code:buildHypVanilla}, and the problem of efficiently\footnote{Where efficiency is assessed as discussed in the beginning of this section.} distributing a circuit are equivalent -- given any solution to one of them, we can compute a solution for the other. We formalise this fact in the Theorem~\ref{thm:vanilla}, while Figures~\ref{fig:vanillaCutsA}, \ref{fig:vanillaCutsB} and~\ref{fig:vanillaCutsC} provide simple examples of the one-to-one correspondence discussed in the theorem.
 
 \begin{theorem} Given any circuit \(\mathcal{C}\), and its hypergraph \(\mathcal{H}\) generated by Algorithm~\ref{code:buildHypVanilla}, there is a bijection between partitions of \(\mathcal{H}\) with \(\lambda_c\) cuts and vanilla~\footnote{Meaning that non-local CNOT gates may only be implemented using the remote-control method from Figure~\ref{fig:nonlocalCNOTs}.} distributions of \(\mathcal{C}\) that use \(\lambda_e\) ebits.
 \label{thm:vanilla}
@@ -88,7 +88,7 @@ We then solve the hypergraph partitioning problem (see Appendix~\ref{chap:HypPar
 We define this bijection inductively. First, we provide the bijection between the \textit{trivial configurations}:
 \begin{itemize}
   \item The partition of \(\mathcal{H}\) where all vertices are in the same block corresponds one-to-one to 
-  \item circuit \(\mathcal{C}\) being executed in a single QPU.
+  \item the whole circuit \(\mathcal{C}\) being executed in a single QPU.
 \end{itemize}
 
 Then, we define a \textit{primitive transformation} for both problems, which allows us to move vertices/wires around. To do so, we use the one-to-one correspondence between vertices and wires that Algorithm~\ref{code:buildHypVanilla} imposes. We additionally require to have an indexed set of hypergraph blocks and QPUs.
@@ -97,19 +97,21 @@ Then, we define a \textit{primitive transformation} for both problems, which all
   \item picking wire \(x\) -- which is guaranteed to be in QPU \(i\) -- and allocating it in QPU \(j\).
 \end{itemize}
 
-Using this primitive, any partition/distribution can be reached, so we indeed have a bijection. Notice that wire \(x\) was guaranteed to be in QPU \(i\) thanks to our inductive definition of the bijection itself. It remains to proof that the given bijection preserves the match between the number of cuts \(\lambda_c\) and the number of ebits required \(\lambda_c\). We give a proof by induction on the sequence of primitives that generated any given configuration, starting from the trivial configuration.
+Using this primitive, any partition/distribution can be reached, so we indeed have a bijection. Notice that wire \(x\) was guaranteed to be in QPU \(i\) thanks to our inductive definition of the bijection itself: all vertices/wires start in the same block (trivial configuration), while the primitive moves any \(x\) vertex/wire respectively to a block or a QPU, both indexed by the same \(j\). It remains to proof that the given bijection preserves the match between the number of cuts \(\lambda_c\) and the number of ebits \(\lambda_e\). We give a proof by induction over the sequence of primitives that, starting from the trivial configuration, generates the partition/distribution.
 
 \begin{itemize}
-  \item The \textit{trivial configuration} of both problems has \(\lambda_c = \lambda_e = 0\).
-  \item Given a sequence of \(n+1\) primitives, we assume that \(\lambda_c = \lambda_e\) holds by the time the \(n\)-th primitive was applied (our induction hypothesis). Then, reallocating vertex \(x\) from block \(i\) to block \(j\), as determined by the \((n+1)\)-th primitive, may:
+  \item The \textit{trivial configuration} of both problems has \(\lambda_c = 0 = \lambda_e\).
+  \item Given a sequence of \(n+1\) primitives, we assume that \(\lambda_c = \lambda_e\) holds by the time the \(n\)-th primitive was applied (our induction hypothesis). When a vertex is reallocated, all of its hyperedges are affected, which may create/remove multiple cuts. We will consider the contribution of each of these hyperedges separately. Besides, reallocating vertex \(x\) from block \(i\) to block \(j\), as determined by the \((n+1)\)-th primitive, may affect each hyperedge \(h\) differently whether \(x\) corresponds to the control wire shared by all the CNOTs represented in \(h\), or it corresponds to a target wire. If \(x\) corresponds to a target wire, applying the primitive may:
     \begin{enumerate}
     \renewcommand{\theenumi}{\alph{enumi})}
-      \item \textit{Increase} \(\lambda_c\). \(\lambda_c\) increases by one iff a new cut is added to an arbitrary hyperedge \(h\). This happens iff the block/QPU \(j\) did not already contain a vertex/wire from \(h\). In that case, \(x\) becomes an isolated non-local CNOT, and to implement it, it will be necessary and sufficient to create an extra ebit, increasing \(\lambda_e\) by one. Therefore, \(\lambda_e\) will increase iff \(\lambda_c\) does so, both by the same amount.
-      \item \textit{Decrease} \(\lambda_c\). In the same spirit, \(\lambda_c\) decreases by one iff a previously isolated vertex/wire is allocated where some fellow vertices/wires are. One less ebit will be required when and only when this happens. Therefore, \(\lambda_e\) will decrease iff \(\lambda_c\) does so, both by the same amount.
+      \item \textit{Increase} \(\lambda_c\). \(\lambda_c\) increases by one iff a new cut is added to the hyperedge \(h\). This happens iff the block/QPU \(j\) did not already contain a vertex/wire from \(h\). In that case, \(x\) becomes an isolated target wire, and to implement its CNOT it will be necessary and sufficient to create an extra ebit, increasing \(\lambda_e\) by one. Therefore, \(\lambda_e\) will increase iff \(\lambda_c\) does so, both by the same amount.
+      \item \textit{Decrease} \(\lambda_c\). In the same spirit, \(\lambda_c\) decreases by one iff a previously isolated target vertex/wire is allocated where some fellow vertices/wires are. When and only when this happens, one less ebit will be required, as the previously isolated target wire \(x\) will no longer need its own ebit: it will either use an existent one or be allocated in the same QPU as the control wire. Therefore, \(\lambda_e\) will decrease iff \(\lambda_c\) does so, both by the same amount.
     \end{enumerate}
 \end{itemize}
 
-Therefore, starting from \(\lambda_c = \lambda_e = 0\) and applying the whole sequence of primitives one by one will maintain \(\lambda_c = \lambda_e\).
+In case \(x\) is the control wire of the CNOTs in \(h\), we will analyse the reallocation of \(x\) from \(i\) to \(j\) as a multiple step process. First, we will relabel block/QPU \(i\) as \(j\) and vice versa. Evidently, this does not change neither \(\lambda_c\) nor \(\lambda_e\). Then, we reallocate each of the other vertices from \(h\) -- all corresponding to target wires -- that were affected by this relabelling back to their block/QPU. Thus, the effect on \(\lambda_c\) and \(\lambda_e\) is completely described by the two cases listed above.
+
+Therefore, starting from \(\lambda_c = \lambda_e = 0\), and applying the whole sequence of primitives one by one, maintains \(\lambda_c = \lambda_e\).
 
 \end{proof}
 
@@ -143,76 +145,77 @@ end
 % Algorithm~\ref{code:distributeVanilla} performs the transformation from hypergraph partition to distributed circuit. Notice that this algorithm may alter the ordering of some of the gates, as a CNOT gate could be inserted before the previous gates on its target wire have been added. Some bookmarking must be kept to prevent this, but the details are straight-forward
 
 \begin{remark} \normalfont 
-Figures~\ref{fig:vanillaCutsA}, \ref{fig:vanillaCutsB} and~\ref{fig:vanillaCutsC} provide a simple example of the one-to-one correspondence discussed in Theorem~\ref{thm:vanilla}. Interestingly, in Figure~\ref{fig:vanillaCutsC}, the second cat-entangler `copies' the information held by the local ebit half previously entangled with \(C\), instead of being directly coupled with \(C\). The latter option would also be correct\footnote{However, in that case, wires \(B\) and \(C\) should interchange places in the circuit representation, so it remains planar.}. Either way is represented by the same hypergraph partition, so in order to maintain our one-to-one correspondence, we should rather say that there is a bijection between hypergraph partitions and equivalence classes\footnote{Families of circuit distributions that are equivalent in the sense that their wires are allocated in the same way, and that the number of ebits required also matches.} of circuit distributions. Although for our algorithm all of the solutions in one such equivalence class are indistinguishable, some of them will offer a more decentralised network of ebits than others. Optimisations taking into account this fact could be done as post-processing of our proposed algorithm.
+In Figure~\ref{fig:vanillaCutsC}, the second cat-entangler `copies' the information held by the local ebit half previously entangled with wire \(C\), instead of being directly coupled with with \(C\). The latter option would also be correct\footnote{However, in that case, wires \(B\) and \(C\) should interchange places in the circuit representation if we want to visualise in 2D that only ebits and classical information crosses the boundary between QPUs.}. Either of these ways is represented by the same hypergraph partition, so in order to maintain our one-to-one correspondence, we should rather say there is a bijection between hypergraph partitions and equivalence classes\footnote{Families of circuit distributions that are equivalent in the sense that their wires are allocated in the same way, and that the number of ebits required also matches.} of circuit distributions. Although for our algorithm all of the solutions in one such equivalence class are indistinguishable, some of the solutions will offer a more decentralised network of ebits than others. Optimisations taking this fact into account could be performed as post-processing of our proposed algorithm.
 \end{remark}
 
-A closer look at the bijection proposed in Theorem~\ref{thm:vanilla} reveals that we can transform back and forth between hypergraph partition and circuit distribution in polynomial time: We just need to read where each of the vertices/wires are allocated, and apply the primitive once for each of them -- which affects all the hyperedges/CNOTs on that vertex/wire. Hence, the time complexity of the transformation in either direction is \(O(n\cdot m)\), where \(n\) is the number of vertices/wires and \(m\) the number of hyperedges/CNOTs. This leads us to two results, one per direction of the bijection:
+A closer look at the bijection proposed in Theorem~\ref{thm:vanilla} reveals that we can transform back and forth between hypergraph partition and circuit distribution in polynomial time: To go from partition to distribution, we just need to read where each of the vertices are assigned, and apply the primitive to move each wire to its QPU -- which affects all the CNOTs on that wire. The opposite direction works the same way. Hence, the time complexity of the transformation in either direction is \(O(n\cdot m)\), where \(n\) is the number of vertices/wires and \(m\) the number of hyperedges/CNOTs. This leads us to two results, one per direction of the bijection:
 
-\begin{corollary} The best vanilla distribution of a circuit can be efficiently derived from an optimal partition of the hypergraph built from it by Algorithm~\ref{code:buildHypVanilla}.
+\begin{corollary} The best vanilla distribution of a circuit can be efficiently derived from an optimal partition of the hypergraph built by Algorithm~\ref{code:buildHypVanilla}.
 \label{col:vanilla}
 \end{corollary} \begin{proof}
 We know it will be the best distribution thanks to Theorem~\ref{thm:vanilla}: The optimal partition will have the lowest possible \(\lambda_c\), and given that at any point \(\lambda_c = \lambda_e\), the corresponding circuit distribution will also have the lowest \(\lambda_e\) possible.
 
-We say the circuit distribution is efficiently derived because the required transformations -- from input circuit to hypergraph, and from hypergraph partition to circuit distribution -- both run in polynomial time.
+We say the circuit distribution is efficiently derived because the required transformations -- Algorithm~\ref{code:buildHypVanilla} and the translation from hypergraph partition to circuit distribution -- both run in polynomial time.
 
 \end{proof}
 
 \begin{corollary} The quantum circuit distribution problem is an NP-complete problem.
+\label{col:np}
 \end{corollary} \begin{proof}
-To proof NP-completeness we simply need to show that, if the quantum circuit distribution problem could be solved in polynomial time, we would be able to solve some NP-complete problem in polynomial time. The hypergraph partitioning problem happens to be NP-complete \citep{NP-complete}, and Theorem~\ref{thm:vanilla} allows us to take any solution for the circuit distribution problem and provide the optimal partition of its hypergraph. The only caveat is that we need to be able to do this for any hypergraph so, given any hypergraph \(\mathcal{H}\), we must be able to build a non-distributed circuit \(\mathcal{C}\) that is represented by \(\mathcal{H}\) -- the opposite direction of what Algorithm~\ref{code:buildHypVanilla} does. There will be multiple such circuits; building one of these in polynomial time is possible, and the details are straight-forward.
+To prove NP-completeness we simply need to show that, in case the quantum circuit distribution problem could be solved in polynomial time, we would be able to solve an NP-complete problem in polynomial time. The hypergraph partitioning problem happens to be NP-complete \citep{NP-complete}, and Theorem~\ref{thm:vanilla} allows us to take the solution for the circuit efficient distribution problem and provide the optimal partition of its hypergraph. The only caveat is that we need to be able to do this for any hypergraph \(\mathcal{H}\), so we must be able to build a non-distributed circuit \(\mathcal{C}\) that is represented by \(\mathcal{H}\) -- the opposite direction of what Algorithm~\ref{code:buildHypVanilla} does. There will be multiple such circuits; building one of these in polynomial time is possible, and the details are straight-forward.
 
 \end{proof}
 
-On the pessimistic side, this means that unless \(P=NP\), finding the best distribution of an arbitrary quantum circuit will take exponential time. On the optimistic side, many problems that compilers from classical computer science deal with are also NP-complete. In our order to have fast compilers that prepare quantum algorithms to be run in distributed architectures, we will not need to look for better algorithms to solve our particular problem: we may use the already rich research on fast algorithms for hypergraph partitioning \citep{KaHyPart}, as the polynomial overhead of transforming back and forth between problems will be negligible.
+On the pessimistic side, Corollary~\ref{col:np} means that unless \(P=NP\), finding the best distribution of an arbitrary quantum circuit takes exponential time. On the optimistic side, many problems that compilers from classical computer science deal with are also NP-complete. In order to implement fast compilers that prepare quantum algorithms to be run in distributed architectures, we will not need to design better algorithms to solve our particular problem: we may use the already rich research on fast algorithms for hypergraph partitioning \citep{KaHyPart}, as the polynomial overhead of transforming back and forth between problems will be negligible.
 
 \input{Figures/VanillaCuts}
 
 \input{Figures/VanillaExample}
 
-A simple circuit, its optimally partitioned hypergraph and the resulting distributed circuit are shown in Figure~\ref{fig:vanillaExample}. The obtained distribution is the most efficient one, in the sense described in the beginning of this section. Each of the QPUs can be set to implement its own local circuit, distilling ebits and using them along classical communication whenever indicated.
+A simple circuit, its optimally partitioned hypergraph and the resulting distributed circuit are shown in Figure~\ref{fig:vanillaExample}. Each of the QPUs can be set to implement its own local circuit, distilling ebits and using them along classical communication when indicated.
 
 
 \subsection{\texttt{SlideCNOTs}: Bringing CNOT gates together}
 \label{pullCNOTs}
 
-In \S\ref{NonLocalGates} we have shown that any 1-qubit gate in the Clifford+T set acting on the control wire of a CNOT gate, with the exception of the H gate, can commute with the CNOT up to some byproduct. Here we use this fact, applying some pre-processing on the input circuit that brings together nearby CNOT gates, allowing us to implement more non-local CNOT gates using a single ebit. Figure~\ref{fig:pulledCNOTexample} gives an example of how these transformations -- listed in Figure~\ref{fig:pullRules} -- can lead to a more efficient distribution of the circuit.
+In Figure~\ref{fig:pullRules} we showed that any 1-qubit gate in the Clifford+T set acting on the control wire of a CNOT gate, with the exception of the H gate, can commute with the CNOT up to some byproduct. Here we use this fact, applying some pre-processing on the input circuit that brings together nearby CNOT gates, allowing us to implement more non-local CNOTs using a single ebit. Figure~\ref{fig:pulledCNOTexample} gives an example of how these transformations -- listed in Figure~\ref{fig:pullRules} -- can lead to a more efficient distribution of the circuit. We will refer to the pre-processing described in this subsection as \texttt{SlideCNOTs}.
 
 \input{Figures/PullExample}
 
-The pre-processing procedure is fairly straight-forward: Exploring the circuit from left to right, whever a CNOT gate is found, use the transformations listed in Figure~\ref{fig:pullRules} to move it as early in the circuit as possible. The procedure introduces some additional \(X\) gates. Fortunately, \(X\) is its own inverse (i.e.\ \(XX = I\)) and every 1-qubit gate in Clifford+T can be interchanged with \(X\) in a simple way (as shown in Figure~\ref{fig:props}). Hence, we should not expect a significant increase in the depth of the circuit, as most byproduct gates will cancel each other out.
+The procedure is fairly straight-forward: Exploring the circuit from left to right, whenever a CNOT gate is found, use the transformations listed in Figure~\ref{fig:pullRules} to move it as early in the circuit as possible. The procedure introduces some additional \(X\) and \(Z\) gates. Fortunately, \(X\) and \(Z\) are their own inverse (i.e.\ \(XX = I\) and \(ZZ = I\)) and every 1-qubit gate in Clifford+T can be interchanged with \(X\) and \(Z\) in a simple way (as shown in Figure~\ref{fig:props}). Hence, we should expect no significant increase in the depth (i.e.\ length) of the circuit, as most byproduct gates will cancel each other out.
 
-So far we have been talking about standard 1-qubit gates, but in practical circuits we are likely to find 1-qubit gates that are \textit{classically-controlled}, meaning that a classical signal (a bit, either \(0\) or \(1\)) decides whether the gate is applied or not. These are no issue for the distribution of the circuit, as this classical control may only require classical communication between QPUs. Concerning the pre-processing we just described, classically-controlled 1-qubit gates can commute with CNOT under the exact same circumstances as their uncontrolled version. The only difference is that, whenever a byproduct gate is created, we must make sure it is controlled by the same classical signal that controlled the original gate, as shown in Figure~\ref{fig:classicalControl}.
+So far we have been talking about standard 1-qubit gates, but in practical circuits we are likely to find 1-qubit gates that are \textit{classically-controlled}, meaning that a classical signal (a bit, either \(0\) or \(1\)) decides whether the gate is applied or not. These gates are commonly used to perform corrections on qubits after a measurement is done during the computation. These classically-controlled gates are no issue for the distribution of the circuit, as the classical control may only require classical communication between QPUs. Concerning the pre-processing we just described, classically-controlled 1-qubit gates can commute with CNOT under the exact same circumstances as their uncontrolled version. The only difference is that, whenever a byproduct gate is created, we must make sure it is controlled by the same classical signal that controlled the original gate, as shown in Figure~\ref{fig:classicalControl}.
 
 \input{Figures/ClassicalControl}
 
-The same procedure can be used to commute 1-qubit gates across the target wire of the CNOT gates, although in this case, apart from \(H\), \(S\) and \(T\) gates can not commute either. This additional pre-processing would have no effect at all on the vanilla version of the algorithm, but it will be beneficial after we apply our next extension, which requires CNOT gates to be adjacent on the target wire.
+The same procedure can be used to commute 1-qubit gates (except \(H\), \(S\) and \(T\)) across the target wire of the CNOT gates. This additional pre-processing would have no effect at all on the vanilla version of the algorithm, but it will be advantageous after we apply our next extension (\texttt{EitherRemote}), which benefits from CNOT gates to be adjacent on the target wire.
 
 \begin{remark} 
-Enabling \texttt{SlideCNOTs} will never increase the ebit count required to implement a partition.
+Using \texttt{SlideCNOTs} will never increase the ebit count required to implement a partition.
 
 \normalfont
-This extension simply moves the CNOTs along their wires. The same CNOTs that were non-local without \texttt{SlideCNOTs} enabled will still be non-local. On the worst case, these non-local CNOTs could be implemented in the exact same way as they were before, so the ebit count would remain the same.
+This pre-processing simply moves the CNOTs along their wires. The same CNOTs that were non-local before \texttt{SlideCNOTs} was applied will still be non-local. On the worst case, these non-local CNOTs could be implemented in the exact same way as they were before, so the ebit count would remain the same.
 
 \label{thm:SlideCNOTsImprove}
 \end{remark}
 
-\subsection{\texttt{EitherRemote}: Adding the remote-target method}
+\subsection{\texttt{EitherRemote}: Including the remote-target method}
 \label{BothEnds}
 
-In \S\ref{NonLocalGates} we showed that the trick for implementing multiple CNOT gates using a single ebit also works if they share a common target wire (instead of the control wire). This makes our optimisation problem more intricate: Now, when the CNOTs are to be implemented non-locally, we can choose to implement them using the remote-control or remote-target method. For explanation purposes, we will use two different kinds of hyperedges in this subsection's figures, depending on whether their CNOTs are controlled by the same wire, or act on the same target (thicker line). 
+In \S\ref{NonLocalGates} we showed that the trick for implementing multiple CNOT gates using a single ebit also works if they share a common target wire (instead of the control wire). This makes our optimisation problem more intricate: Now, when the CNOTs are to be implemented non-locally, we can choose to implement them using the remote-control or remote-target method. For explanation purposes, we will use two different kinds of hyperedges in this subsection's figures, depending on whether their CNOTs are controlled by the same wire, or act on the same target (thicker line). We will refer to the extension we propose in this subsection as \texttt{EitherRemote}.
 
 \input{Figures/BothEndsChallenge}
 
-Figure~\ref{fig:BothEndsChallenge}\textit{a)} shows a simple circuit where a CNOT \(\beta\) shares its target wire \(C\) with another CNOT \(\alpha\). The remote-target method would allow to implement these two non-locally, using a single ebit. We represent this fact in hypergraph \textit{c)}, as the three-vertex hyperedge. Gate \(\gamma\) shares its target with no other gate, so it is represented with an edge \((A,B)\). Hypergraph \textit{b)} is the one built by Algorithm~\ref{code:buildHypVanilla}, and considers that all non-local CNOTs are implemented as remote-control, so it is now gate \(\alpha\) the isolated edge \((B,C)\). If we were to partition the circuit as shown in the figure, hypergraph \textit{b)} would suggest that two qubits are required, when actually only one is enough, as shown by hypergraph \textit{c)}. But, if the partition is \(\{\{A\},\{B,C\}\}\) instead, hypergraph \textit{c)} would be the one overestimating the number of ebits needed. Hence, both hypergraphs \textit{b)} and \textit{c)} are biased. 
+Figure~\ref{fig:BothEndsChallenge}\textit{a)} shows a simple circuit where a CNOT \(\beta\) shares its target wire \(C\) with another CNOT \(\alpha\). The remote-target method would allow to implement these two non-locally, using a single ebit. We represent this fact in hypergraph \textit{c)}, as the three-vertex hyperedge. Gate \(\gamma\) shares its target with no other gate, so it is represented in \textit{c)} with an edge \((A,B)\). Hypergraph \textit{b)} is the one built by Algorithm~\ref{code:buildHypVanilla}, and considers that all non-local CNOTs are implemented as remote-control, so it is now gate \(\alpha\) the isolated edge \((B,C)\). If we were to partition the circuit as shown in the figure, hypergraph \textit{b)} would suggest that two qubits are required, when actually one is enough, as shown by hypergraph \textit{c)}. But, if the partition is \(\{\{A\},\{B,C\}\}\) instead, hypergraph \textit{c)} would be the one overestimating the number of ebits needed. Hence, both hypergraphs \textit{b)} and \textit{c)} are biased. 
 
-If we want to guarantee that the most efficient circuit distribution can always be found by a graph partitioner, we must find an alternative hypergraph representation of the circuit. Notice that it is not an option to simply find the optimal partition for both hypergraphs \textit{b)} and \textit{c)} and choose the one with least cuts: The best circuit distribution is unlikely to have all of its CNOTs implemented in the same way. Therefore, our hypergraph representation must have the following characteristics:
+If we want to guarantee that the most efficient circuit distribution can always be found by a hypergraph partitioner, we must find an alternative hypergraph representation of the circuit. Notice that it is not an option to simply find the optimal partition for both hypergraphs \textit{b)} and \textit{c)} and choose the one with least cuts: The best circuit distribution is unlikely to have all of its CNOTs implemented in the same way. Therefore, our hypergraph representation must have the following characteristics:
 \begin{enumerate}
   \item Both options of how to implement each non-local CNOT are represented.
   \item A partition of the hypergraph must determine, for each non-local CNOT, which method should be used to implement it.
   \item The \(\lambda-1\) metric of a partition should accurately determine how many ebits are required to implement the circuit distribution it describes.
 \end{enumerate}
 
-\begin{algorithm}[caption={Builds the hypergraph of a given circuit, without choosing whether CNOT gates are implemented through common control or common target. This algorithm runs in time \(O(g)\), where \(g\) is the number of gates in the input circuit.}, label={code:buildHypBothEnds}]
+\begin{algorithm}[caption={Builds the hypergraph of a given circuit, without choosing whether non-local CNOTs are implemented using the remote-control or the remote-target method. This algorithm runs in time \(O(g)\), where \(g\) is the number of gates in the input circuit.}, label={code:buildHypBothEnds}]
 input: circuit
 output: (V,H)
 begin
@@ -221,7 +224,6 @@ begin
   hedge $\gets$ $\varnothing$
   foreach wire in circuit do
     V $\gets$ V $\cup$ {wire}
-    H $\gets$ H $+$ {hedge}
     hedge $\gets$ {wire}
     hType $\gets$ $unknown$
     foreach gate in wire do
@@ -242,12 +244,13 @@ begin
         H $\gets$ H $+$ {hedge}
         hedge $\gets$ {wire}
         hType $\gets$ $unknown$
+    H $\gets$ H $+$ {hedge}
 end
 \end{algorithm}
 
 \input{Figures/BothEndsProcess}
 
-We propose our new hypergraph representation to be as \textit{d)} from Figure~\ref{fig:BothEndsChallenge}. Algorithm~\ref{code:buildHypBothEnds} builds such a hypergraph for any given circuit, and Figure~\ref{fig:BothEndsProcess} shows how the hypergraph is built step by step for our running example. These hypergraphs satisfy the three requirements defined above: First, we include all of the control-hyperedges and target-hyperedges. For the second requirement, we give additional structure to the hypergraph, adding vertices that represent CNOT gates; how a CNOT is implemented will be determined by the block its CNOT-vertex is assigned to. The third requirement is the most subtle one. Intuitively, we satisfy it by, imposing that each CNOT-vertex participates in only two hyperedges; one connecting it to its control wire-vertex, the other to its target. A more detailed account of how this third requirement holds is given in the proof of Theorem~\ref{thm:bothEnds}. Corollary~\ref{col:bothEnds} confirms that the optimal partition of our hypergraph determines the most efficient circuit distribution.
+We propose our new hypergraph representation to be as \textit{d)} from Figure~\ref{fig:BothEndsChallenge}. Algorithm~\ref{code:buildHypBothEnds} builds such a hypergraph for any given circuit, and Figure~\ref{fig:BothEndsProcess} shows how the hypergraph is built step by step for our running example. These hypergraphs satisfy the three requirements defined above: First, we include all of the control-hyperedges (those from Figure~\ref{fig:BothEndsChallenge}\textit{b)}) and target-hyperedges (those from Figure~\ref{fig:BothEndsChallenge}\textit{c)}). For the second requirement, we give additional structure to the hypergraph, adding vertices that represent CNOT gates. The way a CNOT is implemented will be determined by the block its CNOT-vertex is assigned to. The third requirement is the most subtle one. Intuitively, we satisfy it by imposing that each CNOT-vertex participates in only two hyperedges; one connecting it to its control wire-vertex, the other to its target. A more detailed account of how this third requirement holds is given in the proof of Theorem~\ref{thm:bothEnds}. Corollary~\ref{col:bothEnds} confirms that the optimal partition of our hypergraph determines the most efficient circuit distribution.
 
 
 \begin{theorem}
@@ -255,29 +258,29 @@ We propose our new hypergraph representation to be as \textit{d)} from Figure~\r
  \label{thm:bothEnds}
 \end{theorem}
 \begin{proof}
-We define the same trivial configuration from Theorem~\ref{thm:vanilla}. In the case of \S\ref{Vanilla}, the CNOT operation itself was always applied in the same QPU as its target, regardless of the CNOT being local or not (see Figure~\ref{fig:nonlocalCNOTs}). Thus, the primitive from Theorem~\ref{thm:vanilla} for reallocating a wire-vertex \(x\) is defined here with the extra constraint that all CNOT-vertices connected by a target-hyperedge to \(x\) must move with it to the same block/QPU \(x\) does. In this way, the primitive has on our new hypergraph the exact same meaning it originally had. 
+We define the same trivial configuration from Theorem~\ref{thm:vanilla}. In the case of the vanilla algorithm (\S\ref{Vanilla}), the CNOT operation itself was always applied in the same QPU as its target, regardless of the CNOT being local or not (see Figure~\ref{fig:nonlocalCNOTs}). Thus, the primitive from Theorem~\ref{thm:vanilla} for reallocating a wire-vertex \(x\) is defined here with the extra constraint that all CNOT-vertices connected by a target-hyperedge to \(x\) must move with it to the same block/QPU \(x\) does. In this way, the primitive has on our new hypergraph representation the exact same meaning it had in the original. 
 
-We need to add another primitive that allows us to move a CNOT-vertex \(x\) independently from its wire-vertices; otherwise not every hypergraph partition would be reachable. Conversely, in order to reach any arbitrary circuit distribution, we need to be able to change the QPU where a CNOT gate \(x\) is implemented. This pair of primitives is defined to correspond one-to-one to each other. Let's consider the four distinct cases of how \(x\) may be allocated regarding its two neighbouring wire-vertices, which  act as \(x\)'s control \(c_x\) and target \(t_x\):
+We need to add another primitive that allows us to move a CNOT-vertex \(x\) independently from its wire-vertices; otherwise not every hypergraph partition would be reachable. Conversely, in order to reach any arbitrary circuit distribution, we need a primitive that changes the QPU where a CNOT gate \(x\) is implemented, which determines the method used to implement the CNOT. This pair of primitives is defined to correspond one-to-one to each other. Let's consider the four distinct cases of how \(x\) may be allocated regarding its two neighbour wire-vertices, which  act as \(x\)'s control \(c_x\) and its target \(t_x\):
 \begin{itemize}
   \item \textit{Local}: The three vertices \(x\), \(c_x\) and \(t_x\) are in the same block \(i\). In this case, \(x\)'s allocation causes \textit{no cut} to either its control-hyperedge or its target-hyperedge. The CNOT gate is implemented locally in QPU \(i\), so \textit{no ebit} is required to implement it.
 
-  \item \textit{Remote control}: Both \(x\) and \(t_x\) are in a block \(i\), while \(c_x\) is in a different block \(j\). In this case, \(x\)'s allocation causes its control-hyperedge to be cut. The cut will already be present if there are other vertices from the hyperedge allocated in \(i\); otherwise \textit{one cut} will be added. On the other hand, an ebit is required to implement CNOT \(x\). If there are other CNOTs in \(i\) controlled by the same \(c_x\) wire (i.e. they are in the same control-hyperedge), the ebit they require can be used to implement \(x\); otherwise \textit{one ebit} will be added.
+  \item \textit{Remote-control}: Both \(x\) and \(t_x\) are in a block \(i\), while \(c_x\) is in a different block \(j\). In this case, \(x\)'s allocation causes its control-hyperedge to be cut. The cut will be already present if there are other vertices from the hyperedge allocated in \(i\); otherwise \textit{one cut} will be added. On the other hand, an ebit is required to implement CNOT \(x\). If there are other CNOTs in \(i\) controlled by the same \(c_x\) wire -- they are in the same control-hyperedge --, the ebit they require can be used to implement \(x\); otherwise \textit{one ebit} will be added.
 
-  \item \textit{Remote target}: Both \(x\) and \(c_x\) are in a block \(i\), while \(t_x\) is in a different block \(j\). In this case, \(x\)'s allocation causes its target-hyperedge to be cut. Again, the cut will be present if there are other vertices from the hyperedge allocated in \(i\); otherwise \textit{one cut} will be added. On the other hand, an ebit is required to implement CNOT \(x\). If there are aother CNOTs in \(i\) that target the same \(t_x\) wire (i.e. they are in the same target-hyperedge), the ebit they require can be used to implement \(x\); otherwise \textit{one ebit} will be added.
+  \item \textit{Remote-target}: Both \(x\) and \(c_x\) are in a block \(i\), while \(t_x\) is in a different block \(j\). In this case, \(x\)'s allocation causes its target-hyperedge to be cut. Again, the cut will be already present if there are other vertices from the hyperedge allocated in \(i\); otherwise \textit{one cut} will be added. On the other hand, an ebit is required to implement CNOT \(x\). If there are other CNOTs in \(i\) that target the same \(t_x\) wire -- they are in the same target-hyperedge --, the ebit they require can be used to implement \(x\); otherwise \textit{one ebit} will be added.
 
-  \item \textit{External}: The three vertices are in separated blocks, with \(x\) in some block \(i\). An example of this situation is shown in Figure~\ref{fig:farCNOT}. In this case, \(x\)'s allocation contributes to \textit{both a cut} on its control-hyperedge and on its target-hyperedge. In this case, \textit{two ebits} are required; the one used to access \(c_x\) may be shared with other CNOT gates in \(i\) that have that wire as common control, while the ebit used to access \(t_x\) may be shared with CNOTs in \(i\) that have that target in common.
+  \item \textit{External}: The three vertices are in separated blocks, with \(x\) in some block \(i\). An example of this situation is shown in Figure~\ref{fig:farCNOT}. In this case, \(x\)'s allocation contributes to \textit{two cuts}, one on its control-hyperedge and another on its target-hyperedge. In this case, \textit{two ebits} are required; the one used to access \(c_x\) may be shared with other CNOT gates in \(i\) that have \(c_x\) as control, while the ebit used to access \(t_x\) may be shared with CNOTs in \(i\) that have \(t_x\) as target.
 \end{itemize} 
 
-The proof by induction discussed in Theorem~\ref{thm:vanilla} holds here if we manage to show that any application of the new CNOT-vertex reallocation primitive still preserves \(\lambda_c = \lambda_e\). Changing the allocation of a CNOT-vertex \(x\) may change its situation among the four cases above. As we detailed, in each case \(x\)'s allocation contributes to the same amount of cuts as ebits the CNOT \(x\) requires. Hence, changing the allocation of \(x\) always preserves \(\lambda_c = \lambda_e\).
+The proof by induction discussed in Theorem~\ref{thm:vanilla} holds here too if we manage to show that any application of the new CNOT-vertex reallocation primitive still preserves \(\lambda_c = \lambda_e\). Changing the allocation of a CNOT-vertex \(x\) may change its situation among the four cases above. As we detailed, in each case \(x\)'s allocation contributes to the same amount of cuts as ebits the CNOT \(x\) requires. Hence, changing the allocation of \(x\) always preserves \(\lambda_c = \lambda_e\).
 
 \end{proof}
 
 \input{Figures/FarCNOT}
 
-The procedure for distributing the circuit following a given hypergraph partition is very similar to that in the vanilla version of the algorithm, now taking into account the new primitive defined in Theorem~\ref{thm:bothEnds}. The time complexity of the procedure still is \(O(n\cdot m)\), where \(n\) is the total number of vertices and \(m\) is the number of hyperedges. Also, notice that the cat-entangler and the cat-disentangler are slightly different whether the CNOTs are implemented through remote-control or remote-target (see Figure~\ref{fig:CNOTtargetProof}).
+The procedure for distributing the circuit following a given hypergraph partition is very similar to that in the vanilla version of the algorithm, now taking into account the new primitive defined in Theorem~\ref{thm:bothEnds}. The time complexity of the procedure still is \(O(n\cdot m)\), where \(n\) is the total number of vertices and \(m\) is the number of hyperedges. Also, notice that the cat-entangler and the cat-disentangler are slightly different whether the CNOTs are implemented through remote-control or remote-target (see Figure~\ref{fig:farCNOT}).
 
 \begin{corollary}
-The best distribution of a circuit can be efficiently derived from an optimal partition of the hypergraph built from it by Algorithm~\ref{code:buildHypBothEnds}.
+The best distribution of a circuit can be efficiently derived from an optimal partition of the hypergraph built by Algorithm~\ref{code:buildHypBothEnds}.
 \label{col:bothEnds}
 \end{corollary}
 \begin{proof}
@@ -291,7 +294,7 @@ The distributed circuit we obtain using the vanilla algorithm (from \S\ref{Vanil
   \renewcommand{\theenumi}{\alph{enumi})}
   \item No CNOT is implemented using the remote-target method.
   \item Our hypergraph partitioner never cuts target-hyperedges.
-  \item CNOT gates are always executed in their target QPU.
+  \item The CNOT operation is always executed in the CNOT's target QPU.
 \end{enumerate}
 All of these restrictions are equivalent.
 \end{corollary}
@@ -302,43 +305,45 @@ Follows directly from the proof of Theorem~\ref{thm:bothEnds}.
 
 The hypergraph built by Algorithm~\ref{code:buildHypBothEnds} has one caveat: When discussing load-balancing in \S\ref{EfficientDistrib}, we explained that we were interested in allocating a uniform number of wires to each QPU. Previously, the hypergraph partitioner took care of this, as it tried to assign a uniform number of vertices to each block. But now, the hypergraph partitioner has no way of distinguishing between `wire' vertices and `CNOT' vertices, the latter being an artificial gadget that should not count towards load-balancing. The solution is simple, instead of the standard hypergraph partition problem, we apply a version of it where vertices can have a weight assigned (see Appendix~\ref{chap:HypPart}). Then, each wire-vertex is given weight \(1\), and each CNOT-vertex is given weight \(0\), effectively ignoring them for the load-balancing aspect.
 
-The case illustrated in Figure~\ref{fig:farCNOT} can be seen intuitively as passing a message through a middle-man. Sometimes, using communication through an already available middle-man is better than putting up a full blown connection just for a single message. The hypergraph partitioner acting on the hypergraph built by Algorithm~\ref{code:buildHypBothEnds} will automatically use this strategy whenever it reduces the number of ebits required. Some criticism is relevant here: if we put no constraint on the exploitation of `middle-men' QPUs, it may happen that communication across many of the QPUs all use the same middle-man QPU to deliver their messages, potentially creating a bottle neck. We see two solutions:
-
-%Notice, however, that this trick only allows to implement a single CNOT with both target and control wires in some particular QPUs. When the CNOT shares one of its wires with multiple CNOTs, it will often be best to use the remote-control or remote-target method to implement all of them together. This trick will be useful whenever there are stray CNOT gates that can not be efficiently grouped with other CNOTs.
-
-\begin{enumerate}
-\item Specialise your hardware as centralised communication network, where the `middle-man' QPU has a similar role to a classical server. The server should be capable of managing a large number of ebits fast and reliably. This is the natural option if the algorithms we wish to run have an intrinsically centralised behaviour -- for instance, if all the gates are controlled by the same wire.
-
-\item In case we wish to have a decentralised network, we will need to find a way to ensure the hypergraph partition we get has some kind of load-balancing the usage of ebits. Fortunately, there is a simple way to do this: instead of giving CNOT vertices weight \(0\) as we previously discussed, we may give them some weight \(\mu > 0\) that indicates how relevant communication load-balancing is in comparison to the uniformity of wire allocation across QPUs. Even better, we could use a custom version of the hypergraph partitioning problem where we provide three parameters instead of two, \(k,\varepsilon,\eta\), where now \(\varepsilon\) acts as the tolerance for imbalance of wire-vertices, while \(\eta\) is a separate tolerance for imbalance of CNOT-vertices, both tolerances being enforced in any partition.
-\end{enumerate}
-
 \begin{remark} 
 Enabling \texttt{EitherRemote} will never increase the ebit count required to implement a partition.
 
 \normalfont
-This extension simply changes how each non-local CNOT is implemented. On the worst case, these non-local CNOTs could still be implemented in the exact same way as they were before, so the ebit count would remain the same.
+This extension simply changes how each non-local CNOT is implemented, while the number of non-local CNOTs remains the same. On the worst case, these non-local CNOTs could be implemented in the exact same way as they were before, so the ebit count would remain the same.
 
 \label{thm:BothEndsImprove}
 \end{remark}
 
+The case illustrated in Figure~\ref{fig:farCNOT} can be seen intuitively as passing a message through a middle-man. Sometimes, using communication through an already available middle-man is better than putting up a full blown connection just for a single message. The hypergraph partitioner acting on the hypergraph built by Algorithm~\ref{code:buildHypBothEnds} will automatically use this strategy whenever it reduces the number of ebits required. However, some criticism is relevant here: if we put no constraint on the exploitation of `middle-men' QPUs, it may happen that communication across many of the QPUs all use the same middle-man QPU to deliver their messages, potentially creating a bottle neck. We see two solutions:
+
+%Notice, however, that this trick only allows to implement a single CNOT with both target and control wires in some particular QPUs. When the CNOT shares one of its wires with multiple CNOTs, it will often be best to use the remote-control or remote-target method to implement all of them together. This trick will be useful whenever there are stray CNOT gates that can not be efficiently grouped with other CNOTs.
+
+\begin{enumerate}
+\item Specialise the hardware to be efficiently managed as a centralised communication network, where the middle-man QPU has a similar role to a classical server. The server should be capable of managing a large number of ebits fast and reliably. This is the natural option if the algorithms we wish to run have an intrinsically centralised behaviour -- for instance, if all the gates are controlled by the same wire.
+
+\item In case we wish to have a decentralised network, we will need to find a way to ensure the hypergraph partition we get has some kind of load-balancing of the usage of ebits. Fortunately, there is a simple way to do this: instead of giving CNOT vertices weight \(0\) as we previously discussed, we may give them some weight \(\mu > 0\) that indicates how relevant communication load-balancing is in comparison to the uniformity of wire allocation across QPUs. Even better, we could use a custom version of the hypergraph partitioning problem where we provide three parameters instead of two, \(k,\varepsilon,\eta\), where now \(\varepsilon\) acts as the tolerance for imbalance of wire-vertices, while \(\eta\) is a separate tolerance for imbalance of CNOT-vertices, both tolerances being enforced in any partition.
+\end{enumerate}
+
 %Across the figures of this subsection we have drawn differently hyperedges that group CNOTs with remote-control or remote-target. However, it should be noticed that the hypergraph partitioner does not use this information at any point. This distinction is made for explanation purposes, and it is only relevant when building the distributed version of the circuit. 
 
-As a wrap up of this section, Figure~\ref{fig:modes} showd the same circuit being distributed in four different ways: with or without the extension from \S\ref{pullCNOTs} and with or without the extension from \S\ref{BothEnds}. This provides a simple example where both extensions are shown to reduce the number of ebits required to distribute a circuit.
+As a wrap up of this section, Figure~\ref{fig:modes} shows the same circuit being distributed in four different ways: with or without \texttt{SlideCNOTs} and with or without \texttt{EitherRemote}. This provides a simple example where both extensions are shown to reduce the number of ebits required to distribute a circuit.
 
 \input{Figures/Modes}
 
 \section{Interchanging CNOT gates}
 
-When applied to disjoint sets of wires, CNOT gates commute trivially. If one of the wires is in common, in case it has the same role for both CNOTs (control or target), we can take advantage of it and implement both gates using a single ebit. If both wires are in common and have the same role, the CNOTs cancel each other. But what happens if two CNOTs act on the same wire with different roles? In that case, we can still interchange the gates as in Figure~\ref{fig:interchangeRule}, but that creates an additional CNOT per interchange.
+In this section we discuss a potential improvement to our algorithm. We focus on explaining the challenges it implies, and we outline an approach to tackle them. Overall, this section should be understood as a draft idea for future work. 
+
+When applied to disjoint sets of wires, CNOT gates commute trivially. If one of the wires is in common, and it has the same role for both CNOTs (control or target), we can implement both gates using a single ebit. If both wires are in common and have the same role, the CNOTs cancel each other. But what happens if two CNOTs act on the same wire with different roles? In that case, we can still interchange the gates as in Figure~\ref{fig:interchangeRule}, but this creates an additional CNOT.
 
 \input{Figures/InterchangeRule}
 
 \input{Figures/InterchangeChallenge}
 
-It may seem like pre-processing the circuit so it has the minimum possible number of CNOT gates would always be the best option for partitioning. However, this is not always true, as shown in Figure~\ref{fig:interchangeChallenge}. In some cases interchanging CNOTs may unlock a more efficient distribution of the circuit. Therefore, the effect of CNOT interchange should also be encoded in our hypergraph representation, if we were to exploit its full potential. However, encoding that information in a hypergraph is not natural, due to the following reasons:
+It may seem like pre-processing the circuit so it has the minimum possible number of CNOT gates would always be the best option for partitioning. However, this is not always true, as shown in Figure~\ref{fig:interchangeChallenge}. In some cases interchanging CNOTs may unlock a more efficient distribution of the circuit. To account for this, the effect of CNOT interchange should also be encoded in our hypergraph representation. However, encoding that information in a hypergraph is not natural, due to the following reasons:
 
 \begin{itemize}
-  \item \textit{The way CNOT gates are ordered in the circuit is important}: This is something we omit in the hypergraphs built by Algorithm~\ref{code:buildHypBothEnds}; looking at the final hypergraph in Figure~\ref{fig:BothEndsProcess}, we can not tell whether \(\alpha\) goes before or after \(\beta\). This information is key when interchanging, as it will determine which are the new neighbours of the interchanged CNOTs. A possible approach would be to impose that every hyperedge is an ordered list of vertices\footnote{\, For instance, the first vertex corresponding to a wire and the rest, corresponding to the different CNOT gates, ordered as in the circuit.}. However, the standard hypergraph partitioning problem does not take into account such ordering. We would need to define a custom hypergraph partitioning problem in order to manage this new aspect.
+  \item \textit{The way CNOT gates are ordered in the circuit is important}: This is something we omit in the hypergraphs built by Algorithms~\ref{code:buildHypVanilla} and~\ref{code:buildHypBothEnds}: looking at the final hypergraph in Figure~\ref{fig:BothEndsProcess}, we can not tell whether \(\alpha\) goes before or after \(\beta\). This information is key when interchanging, as it will determine which are the new neighbours of the interchanged CNOTs. A possible approach would be to impose that every hyperedge is an ordered list of vertices\footnote{For instance, the first vertex corresponding to a wire and the rest, corresponding to the different CNOT gates, ordered as in the circuit.}. However, the standard hypergraph partitioning problem does not take into account such ordering. We would need to define a custom hypergraph partitioning problem in order to manage this new aspect.
 
   \item \textit{Interchanging CNOT gates adds new CNOTs}: The CNOT interchange problem is substantially different from the one we discussed and solved in \S\ref{BothEnds}. The essence of our solution was to represent all of the potential choices in a single hypergraph. However, if were to interchange a pair of CNOTs, new choices would become available: Is it worth to interchange the CNOTs again with their new neighbours? Should the byproduct CNOT be itself interchanged further? Although the number of options to take into account is finite, it increases considerably fast. Furthermore, each choice would not be independent from the rest -- as some interchanges are only available if others have been done before -- so the structure of the hypergraph would likely be quite complex in order to accommodate this information.
 \end{itemize}
@@ -351,11 +356,3 @@ Instead of encoding this choice within the hypergraph partioning problem, we may
 \end{enumerate}
 
 \textbf{TODO}: Is this a greedy algorithm? (most probably, a greedy algorithm won't be optimal... maybe dynamic programming?) If I have time I should I give more details on the strategy? Maybe implement it.
-
-\section{An upper bound}
-
-\textbf{TODO}: Finally, for the sake of comparison, we will use some theoretical results on quantum circuit decomposition, in order to estimate an upper bound of the number of ebits needed to distribute any quantum process on \(N\) qubits.
-
-\textbf{TODO}: Discuss structured vs unstructured as the reason why we expect our algorithm to perform better.
-
-\textbf{NOTE}: I probably won't do this section. The upper bound I've got is very loose, and the discussion does not seem to fit that well into this thesis.

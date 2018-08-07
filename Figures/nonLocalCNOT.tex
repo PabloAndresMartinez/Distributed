@@ -18,6 +18,8 @@
   \pic [below left=27mm and -13mm of circuit.north west] (entangler) {opaquebox=entangler/9mm/55mm/23mm/41mm/cat-entangler};
   \pic [below left=27mm and -13mm of circuit.north west] (disentangler) {opaquebox=disentangler/9mm/105mm/23mm/39.5mm/cat-disentangler};
   \node[right=2mm of circuit.north west, font=\itshape] (text) {b)};
+  \node[font=\scriptsize\itshape, opacity=0.9, above right=3mm and -4mm of leftPoint] (QPUA) {QPU A};
+  \node[font=\scriptsize\itshape, opacity=0.9, below right=3mm and -4mm of leftPoint] (QPUB) {QPU B};
 \end{tikzpicture}
 \caption
 {A non-local CNOT, shown in \textit{a)}. The dashed line indicates how the circuit is separated into two QPUs. The implementation scheme is given in \textit{b)}.}
