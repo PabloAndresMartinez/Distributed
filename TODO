@@ -8,10 +8,8 @@
 * p38/39: this discussion presumes a fixed algorithm. What if we want one single architecture for a universal setup that can run various algorithms? Then you don't know ahead of time which nodes will be "servers", nor how to choose the hyperparameter mu or eta.
 
 
-* Revise Evaluation chapter
 * Revise Introduction chapter
 * Revise Conclusion chapter
 * Revise Appendix
 * Finish interchange CNOT section (and revise it)
-* Check bibliography is well formatted
 * Make sure footnote 8 is in the right page
