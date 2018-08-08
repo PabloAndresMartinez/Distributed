@@ -2,18 +2,13 @@
 * p29 the hypergraph picture is unclear; the reader hasn't seen the notation for hyperedges before, and instead might expect something like https://tex.stackexchange.com/questions/1175/drawing-a-hypergraph 
 * Similarly, explain the notation for cuts somewhere early, both in circuits and in hypergraphs.
 
-* adverbs/adjectives ("is fairly reliably" instead of "fairly reliable")
-* "prove" (verb) vs "proof" (noun)
 
-Otherwise, here are some more comments, both smaller ones, as areas that may need some more attention:
 * Instead of, or in addition to, Solovay-Kitaev, you might also mention Selinger-Ross, which is more efficient (and in fact optimal).
 * p31 "we are likely to find gates that are classically controlled": discuss somewhere how this is caused by the current crop of quantum algorithms and the current form of compilers/languages like quipper
-* Fig 4.9: is there a better example, where both the remote-control and remote-target approaches require 2 ebits, but the optimal partition only needs 1? (Maybe refer forward to Fig 4.12?)
 * p38/39: this discussion presumes a fixed algorithm. What if we want one single architecture for a universal setup that can run various algorithms? Then you don't know ahead of time which nodes will be "servers", nor how to choose the hyperparameter mu or eta.
 
 
-* Either change the circuit from BothEndsChallenge.tex and BothEndsProcess.tex or move the CNOTs so they are alpha, beta, gamma in order
 * Finish interchange CNOT section (and revise it)
-* Revise Theorem 4.1
 * Revise Evaluation chapter
 * Check bibliography is well formatted
+* Make sure footnote 8 is in the right page

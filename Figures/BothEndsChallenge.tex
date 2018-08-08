@@ -3,87 +3,110 @@
 \begin{tikzpicture}
   \node (circ) {
     \begin{tikzpicture}
-      \node[inner sep=0pt] (circuit) {\includegraphics[scale=2]{Figures/circuits/bothEndsSimple}};  
-      \node[above left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(A\)};
-      \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
-      \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
-      \node[above right=0.8mm and 12.8mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
-      \node[below right=0.8mm and 23.6mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
-      \node[below right=0.8mm and 34.4mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[inner sep=0pt] (circuit) {\includegraphics[scale=2]{Figures/circuits/bothEndsBetter}};  
+      \node[above left=8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(A\)};
+      \node[above left=0.8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
+      \node[below left=0.8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
+      \node[below left=8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(D\)};
+      \node[above right=4.5mm and 12.8mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=2.5mm and 22.8mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
+      \node[below right=4.5mm and 34.4mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
+      \node[above right=3mm and 44.2mm of circuit.west, opacity=0.9] {\footnotesize \(\delta\)};
+      \node[above right=3mm and 54.5mm of circuit.west, opacity=0.9] {\footnotesize \(\eta\)};
+      \coordinate[right=2mm of circuit.west] (leftPoint);
+      \coordinate[left=6mm of circuit.east] (rightPoint);
+      \pic (cut) {cut=leftPoint/rightPoint};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
     \end{tikzpicture}
   };
-  \node[below left=5mm and -23mm of circ] (controlHyp) {
+  \node[below left=5mm and -34mm of circ] (controlHyp) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (A) at (90:10mm);
-      \coordinate (B) at (210:10mm);
-      \coordinate (C) at (330:10mm);
-      \draw (O) -- (A);
-      \draw (O) -- (B);
-      \draw (O) -- (C);
+      \coordinate (aux) at (135:5mm);
+      \coordinate (A) at (135:11mm);
+      \coordinate (B) at (45:11mm);
+      \coordinate (C) at (225:11mm);
+      \coordinate (D) at (315:11mm);
+      \draw (aux) -- (A);
+      \draw (aux) -- (B);
+      \draw (aux) -- (C);
       \draw (B) -- (C);
+      \draw (C) -- (D);
+      \draw (B) -- (D);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      \coordinate (leftPoint) at (270:10mm);
-      \coordinate (rightPoint) at (30:10mm);
+      \node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
+      \coordinate (leftPoint) at (180:10mm);
+      \coordinate (rightPoint) at (0:10mm);
       \pic (cut) {cut=leftPoint/rightPoint};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {b)};
+      \node[above left=0mm and 6mm of A, font=\itshape] (text) {b)};
     \end{tikzpicture}
   };
-  \node[right=8mm of controlHyp] (targetHyp) {
+  \node[right=10mm of controlHyp] (targetHyp) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (A) at (90:10mm);
-      \coordinate (B) at (210:10mm);
-      \coordinate (C) at (330:10mm);
-      \draw[ultra thick] (O) -- (A);
-      \draw[ultra thick] (O) -- (B);
-      \draw[ultra thick] (O) -- (C);
-      \draw[ultra thick] (A) -- (B);
+      \coordinate (aux) at (315:5mm);
+      \coordinate (A) at (135:11mm);
+      \coordinate (B) at (45:11mm);
+      \coordinate (C) at (225:11mm);
+      \coordinate (D) at (315:11mm);
+      \draw[ultra thick] (aux) -- (D);
+      \draw[ultra thick] (aux) -- (B);
+      \draw[ultra thick] (aux) -- (C);
+      \draw[ultra thick] (B) -- (C);
+      \draw[ultra thick] (C) -- (D);
+      \draw[ultra thick] (A) -- (C);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      \coordinate (leftPoint) at (270:10mm);
-      \coordinate (rightPoint) at (30:10mm);
+      \node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
+      \coordinate (leftPoint) at (180:10mm);
+      \coordinate (rightPoint) at (0:10mm);
       \pic (cut) {cut=leftPoint/rightPoint};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {c)};
+      \node[above left=0mm and 6mm of A, font=\itshape] (text) {c)};
     \end{tikzpicture}
   };
-  \node[below right=-20mm and 15mm of circ] (hypergraph) {
+  \node[below right=-22mm and 5mm of circ] (hypergraph) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      \draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      \draw[ultra thick] (auxC) -- (C);
-      \draw[ultra thick] (auxC) -- (b);
-      \draw[ultra thick] (auxC) -- (a);
-      \draw (B) -- (a);
-      \draw[ultra thick] (B) -- (c);
+      \coordinate (auxC) at (135:5mm);
+      \coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      \coordinate (B) at (45:20mm);
+      \coordinate (C) at (225:20mm);
+      \coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      \coordinate (b) at (60:9mm);
+      \coordinate (c) at (270:14.1mm);
+      \coordinate (d) at (240:9mm);
+      \coordinate (e) at (315:11mm);
+      \draw (auxC) -- (C);
+      \draw (auxC) -- (a);
+      \draw (auxC) -- (b);
+      \draw[ultra thick] (auxB) -- (B);
+      \draw[ultra thick] (auxB) -- (d);
+      \draw[ultra thick] (auxB) -- (e);
+      \draw (C) -- (d);
+      \draw (D) -- (e);
+      \draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      \draw (D) -- (c);
+      \draw[ultra thick] (C) -- (c);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      \node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
       \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
       \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
       \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \coordinate (leftPoint) at (285:18mm);
-      \coordinate (rightPoint) at (15:18mm);
+      \node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      \node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \coordinate (leftPoint) at (180:16mm);
+      \coordinate (rightPoint) at (0:16mm);
       \pic (cut) {cut=leftPoint/rightPoint};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {d)};
+      \node[above left=0mm and 6mm of A, font=\itshape] (text) {d)};
     \end{tikzpicture}
   };
 \end{tikzpicture}
-%\vspace*{5mm}
-\caption{A circuit \textit{a)} and its hypergraph \textit{b)} as built by Algorithm~\ref{code:buildHypVanilla}. Hypergraph \textit{c)} is the result of running the same algorithm but grouping CNOTs in the same hyperedge if and only if they share the same target (instead of control). Hypergraph \textit{d)} is the one built by Algorithm~\ref{code:buildHypBothEnds}.}
+\vspace*{2mm}
+\caption{A circuit \textit{a)} and its hypergraph \textit{b)} as built by Algorithm~\ref{code:buildHypVanilla}. Hypergraph \textit{c)} is the result of running the same algorithm but grouping CNOTs in the same hyperedge if and only if they share the same target (instead of control). Hypergraph \textit{d)} is the one built by Algorithm~\ref{code:buildHypBothEnds}. Any (vertex balanced) partition of \textit{b)} or \textit{c)} cuts three hyperedges; a partition of \textit{d)} cuts two.}
 \label{fig:BothEndsChallenge}
 \end{figure}

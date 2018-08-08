@@ -1,160 +1,209 @@
 \begin{figure}
-\centering
-\begin{tikzpicture}
+\vspace*{20mm}
+\hspace*{40mm}
+\begin{tikzpicture}[transform canvas={scale=0.9}]
   \node (circ) {
     \begin{tikzpicture}
-      \node[inner sep=0pt] (circuit) {\includegraphics[scale=2]{Figures/circuits/bothEndsSimple}};  
-      \node[above left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(A\)};
-      \node[left=-7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
-      \node[below left=4.5mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
-      \node[above right=0.8mm and 12.8mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
-      \node[below right=0.8mm and 23.6mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
-      \node[below right=0.8mm and 34.4mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[inner sep=0pt] (circuit) {\includegraphics[scale=2]{Figures/circuits/bothEndsBetter}};  
+      \node[above left=8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(A\)};
+      \node[above left=0.8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(B\)};
+      \node[below left=0.8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(C\)};
+      \node[below left=8mm and -7mm of circuit.west, opacity=0.9] {\footnotesize \(D\)};
+      \node[above right=4.5mm and 12.8mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[right=23.8mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
+      \node[below right=4.5mm and 34.4mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
+      \node[right=45.2mm of circuit.west, opacity=0.9] {\footnotesize \(\delta\)};
+      \node[right=55.8mm of circuit.west, opacity=0.9] {\footnotesize \(\eta\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {Input:};
     \end{tikzpicture}
   };
-  \node[right=3mm of circ] (step1) {
+  \node[above right=-22mm and -5mm of circ] (step1) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      %\draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      %\draw[ultra thick] (auxC) -- (C);
-      %\draw[ultra thick] (auxC) -- (b);
-      %\draw[ultra thick] (auxC) -- (a);
-      %\draw (B) -- (a);
-      %\draw[ultra thick] (B) -- (c);
+      %\coordinate (auxC) at (135:5mm);
+      %\coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      %\coordinate (B) at (45:20mm);
+      %\coordinate (C) at (225:20mm);
+      %\coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      %\coordinate (b) at (60:9mm);
+      %\coordinate (c) at (270:14.1mm);
+      %\coordinate (d) at (240:9mm);
+      %\coordinate (e) at (315:11mm);
+      %\draw (auxC) -- (C);
+      %\draw (auxC) -- (a);
+      %\draw (auxC) -- (b);
+      %\draw[ultra thick] (auxB) -- (B);
+      %\draw[ultra thick] (auxB) -- (d);
+      %\draw[ultra thick] (auxB) -- (e);
+      %\draw (C) -- (d);
+      %\draw (D) -- (e);
+      %\draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      %\draw (D) -- (c);
+      %\draw[ultra thick] (C) -- (c);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       %\node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       %\node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      %\node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
+      %\node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
+      \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
       %\node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
-      \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {1)};
+      %\node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
+      %\node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      %\node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \node[above left=0mm and 5mm of A, font=\itshape] (text) {1)};
     \end{tikzpicture}
   };
-  \node[right=16.5mm of step1] (step2) {
+  \node[right=21.5mm of circ] (step2) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      \draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      %\draw[ultra thick] (auxC) -- (C);
-      %\draw[ultra thick] (auxC) -- (b);
-      %\draw[ultra thick] (auxC) -- (a);
-      %\draw (B) -- (a);
-      %\draw[ultra thick] (B) -- (c);
-      \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
-      %\node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
-      %\node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      %\node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
-      \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
-      \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {2)};
-    \end{tikzpicture}
-  };
-  \node[below left=5mm and -30mm of circ] (step3) {
-    \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      \draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      %\draw[ultra thick] (auxC) -- (C);
-      %\draw[ultra thick] (auxC) -- (b);
-      %\draw[ultra thick] (auxC) -- (a);
-      %\draw (B) -- (a);
-      \draw[ultra thick] (B) -- (c);
+      %\coordinate (auxC) at (135:5mm);
+      \coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      \coordinate (B) at (45:20mm);
+      %\coordinate (C) at (225:20mm);
+      %\coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      \coordinate (b) at (60:9mm);
+      %\coordinate (c) at (270:14.1mm);
+      \coordinate (d) at (240:9mm);
+      \coordinate (e) at (315:11mm);
+      %\draw (auxC) -- (C);
+      %\draw (auxC) -- (a);
+      %\draw (auxC) -- (b);
+      \draw[ultra thick] (auxB) -- (B);
+      \draw[ultra thick] (auxB) -- (d);
+      \draw[ultra thick] (auxB) -- (e);
+      %\draw (C) -- (d);
+      %\draw (D) -- (e);
+      \draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      %\draw (D) -- (c);
+      %\draw[ultra thick] (C) -- (c);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       %\node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
-      %\node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
-      \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
-      \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {3)};
-    \end{tikzpicture}
-  };
-  \node[right=20mm of step3] (step4) {
-    \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      \draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      %\draw[ultra thick] (auxC) -- (C);
-      %\draw[ultra thick] (auxC) -- (b);
-      %\draw[ultra thick] (auxC) -- (a);
-      \draw (B) -- (a);
-      \draw[ultra thick] (B) -- (c);
-      \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
-      \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
-      %\node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      %\node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
       \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
       \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
-      \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {4)};
+      %\node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
+      \node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      \node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \node[above left=0mm and 5mm of A, font=\itshape] (text) {2)};
     \end{tikzpicture}
   };
-  \node[right=20mm of step4] (final) {
+  \node[below left=5mm and -40mm of circ] (step3) {
     \begin{tikzpicture}
-      \coordinate (O) at (0,0);
-      \coordinate (auxA) at (90:9mm);
-      \coordinate (auxC) at (330:9mm);
-      \coordinate (A) at (90:18mm);
-      \coordinate (B) at (210:18mm);
-      \coordinate (C) at (330:18mm);
-      \coordinate (a) at (270:9mm);
-      \coordinate (b) at (30:9mm);
-      \coordinate (c) at (150:9mm);
-      \draw (auxA) -- (A);
-      \draw (auxA) -- (b);
-      \draw (auxA) -- (c);
-      \draw[ultra thick] (auxC) -- (C);
-      \draw[ultra thick] (auxC) -- (b);
-      \draw[ultra thick] (auxC) -- (a);
-      \draw (B) -- (a);
-      \draw[ultra thick] (B) -- (c);
+      \coordinate (auxC) at (135:5mm);
+      \coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      \coordinate (B) at (45:20mm);
+      \coordinate (C) at (225:20mm);
+      %\coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      \coordinate (b) at (60:9mm);
+      %\coordinate (c) at (270:14.1mm);
+      \coordinate (d) at (240:9mm);
+      \coordinate (e) at (315:11mm);
+      \draw (auxC) -- (C);
+      \draw (auxC) -- (a);
+      \draw (auxC) -- (b);
+      \draw[ultra thick] (auxB) -- (B);
+      \draw[ultra thick] (auxB) -- (d);
+      \draw[ultra thick] (auxB) -- (e);
+      %\draw (C) -- (d);
+      %\draw (D) -- (e);
+      \draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      %\draw (D) -- (c);
+      %\draw[ultra thick] (C) -- (c);
       \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
       \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
       \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      %\node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
+      \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
+      \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
+      %\node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
+      \node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      \node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \node[above left=0mm and 5mm of A, font=\itshape] (text) {3)};
+    \end{tikzpicture}
+  };
+  \node[right=10mm of step3] (step4) {
+    \begin{tikzpicture}
+      \coordinate (auxC) at (135:5mm);
+      \coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      \coordinate (B) at (45:20mm);
+      \coordinate (C) at (225:20mm);
+      %\coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      \coordinate (b) at (60:9mm);
+      \coordinate (c) at (270:14.1mm);
+      \coordinate (d) at (240:9mm);
+      \coordinate (e) at (315:11mm);
+      \draw (auxC) -- (C);
+      \draw (auxC) -- (a);
+      \draw (auxC) -- (b);
+      \draw[ultra thick] (auxB) -- (B);
+      \draw[ultra thick] (auxB) -- (d);
+      \draw[ultra thick] (auxB) -- (e);
+      \draw (C) -- (d);
+      %\draw (D) -- (e);
+      \draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      %\draw (D) -- (c);
+      \draw[ultra thick] (C) -- (c);
+      \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
+      \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
+      \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      %\node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
       \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
       \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
       \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
-      \node[above left=0mm and 13mm of A, font=\itshape] (text) {5)};
+      \node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      \node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \node[above left=0mm and 5mm of A, font=\itshape] (text) {4)};
+    \end{tikzpicture}
+  };
+  \node[right=10mm of step4] (final) {
+    \begin{tikzpicture}
+      \coordinate (auxC) at (135:5mm);
+      \coordinate (auxB) at (315:5mm);
+      \coordinate (A) at (135:20mm);
+      \coordinate (B) at (45:20mm);
+      \coordinate (C) at (225:20mm);
+      \coordinate (D) at (315:20mm);
+      \coordinate (a) at (135:11mm);
+      \coordinate (b) at (60:9mm);
+      \coordinate (c) at (270:14.1mm);
+      \coordinate (d) at (240:9mm);
+      \coordinate (e) at (315:11mm);
+      \draw (auxC) -- (C);
+      \draw (auxC) -- (a);
+      \draw (auxC) -- (b);
+      \draw[ultra thick] (auxB) -- (B);
+      \draw[ultra thick] (auxB) -- (d);
+      \draw[ultra thick] (auxB) -- (e);
+      \draw (C) -- (d);
+      \draw (D) -- (e);
+      \draw[ultra thick] (B) -- (b);
+      \draw[ultra thick] (A) -- (a);
+      \draw (D) -- (c);
+      \draw[ultra thick] (C) -- (c);
+      \node[circle, right=-2.5mm of A, fill=white, inner sep=0pt, minimum size=5mm] {\(A\)};
+      \node[circle, right=-2.5mm of B, fill=white, inner sep=0pt, minimum size=5mm] {\(B\)};
+      \node[circle, right=-2.5mm of C, fill=white, inner sep=0pt, minimum size=5mm] {\(C\)};
+      \node[circle, right=-2.5mm of D, fill=white, inner sep=0pt, minimum size=5mm] {\(D\)};
+      \node[circle, right=-2.5mm of a, fill=white, inner sep=0pt, minimum size=5mm] {\(\alpha\)};
+      \node[circle, right=-2.5mm of b, fill=white, inner sep=0pt, minimum size=5mm] {\(\beta\)};
+      \node[circle, right=-2.5mm of c, fill=white, inner sep=0pt, minimum size=5mm] {\(\gamma\)};
+      \node[circle, right=-2.5mm of d, fill=white, inner sep=0pt, minimum size=5mm] {\(\delta\)};
+      \node[circle, right=-2.5mm of e, fill=white, inner sep=0pt, minimum size=5mm] {\(\eta\)};
+      \node[above left=0mm and 5mm of A, font=\itshape] (text) {5)};
     \end{tikzpicture}
   };
 \end{tikzpicture}
-\vspace*{0mm}
+\vspace*{61mm}
 \caption{Step by step execution of Algorithm~\ref{code:buildHypBothEnds}.}
 \label{fig:BothEndsProcess}
 \end{figure}
