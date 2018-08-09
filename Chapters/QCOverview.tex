@@ -1,23 +1,5 @@
 \chapter{Quantum Computing: A brief overview}
-
-Quantum computing aims to take advantage of quantum mechanics to speed-up computations. There are many examples of problems that, although solvable by a standard (classical) computer, the time it would take to compute them is unreasonable in practice, regardless how large or fast your classical computer is. Some of these \textit{intractable problems} can be solved efficiently on a quantum computer. Well-known examples of such problems are:
-
-\begin{itemize} 
-\item \textit{Factorisation of large numbers}: In classical computers, all known factorisation algorithms take exponential time with respect to the input size. It is strongly believed that there is no way a classical computer can solve the problem efficiently -- in fact, we are so confident about it that most widely used encryption systems, like RSA, rely on this. However, quantum computers are capable of solving that problem in polynomial time (i.e.\ making it tractable), using Shor's algorithm~\citep{Shor}.
-\item \textit{Unstructured search}: The aim is to perform a brute-force search (i.e.\ requiring no prior knowledge about the search space) over \(N\) data-points. Classical computers have no other option than testing each data-point, so the time they take to perform the search is proportional to \(N\). With a quantum computer, using Grover's algorithm~\citep{Grover} (previously introduced), the search is done in time proportional to \(\sqrt{N}\).
-\end{itemize}
-
-Besides, a recent result by \citet{BQPSepPH} gives formal proof of the existence of a large family of problems that a classical computer may never solve in polynomial time, but are solvable in polynomial time on a quantum one. Nevertheless, all of these results are theoretical in nature, and giving experimental evidence of this gap in computational power is a highly active area of research, known as \textit{quantum supremacy}. 
-
-Quantum computing would be very valuable in many areas of research that deal with problems that are intractable on classical computers. Some of the main applications that have been discussed in the literature are:
-
-\begin{itemize}
-\item \textit{Chemistry, medicine and material sciences}: Calculating molecular properties on complex systems is extremely demanding for classical computers. However, polynomial algorithms for this kind of problems are known for quantum computers~\citep{TowardsQuantumChemistry}. %Quantum computers are likely to trigger a revolution on areas of science that need to model molecules and their interactions.
-\item \textit{Machine learning}: Finding patterns in a large pool of data is the essence of machine learning. Multiple quantum algorithms have been shown to be able to detect patterns that are believed not to be efficiently attainable classically~\citep{QuantumMachineLearning}.
-\item \textit{Engineering}: Optimization and search problems are common in almost every area of engineering. Quantum computers are particularly well suited for these tasks, with Grover's algorithm being an obvious example.
-\end{itemize}
-
-For any of these applications we will require large scale quantum computers. Due to the obstacles in the way of building a large mainframe quantum computer (see \S\ref{Challenges}), some authors have advocated the alternative of building a \textit{quantum multicomputer}: a grid of small quantum computers that cooperate to perform an overall computation~\citep{DistributedQCHW}. In the present work, particularly in Chapter~\ref{chap:Project}, we contribute to this perspective, providing a method for efficiently distributing any quantum program originally designed for a monolithic quantum computer.
+\label{chap:Overview}
 
 \section{The principles of quantum computing}
 \label{Principles}

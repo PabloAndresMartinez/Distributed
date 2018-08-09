@@ -1,7 +1,4 @@
 
-* p29 the hypergraph picture is unclear; the reader hasn't seen the notation for hyperedges before, and instead might expect something like https://tex.stackexchange.com/questions/1175/drawing-a-hypergraph 
-* Similarly, explain the notation for cuts somewhere early, both in circuits and in hypergraphs.
-
 
 * Instead of, or in addition to, Solovay-Kitaev, you might also mention Selinger-Ross, which is more efficient (and in fact optimal).
 * p31 "we are likely to find gates that are classically controlled": discuss somewhere how this is caused by the current crop of quantum algorithms and the current form of compilers/languages like quipper
@@ -12,4 +9,6 @@
 * Revise Conclusion chapter
 * Revise Appendix
 * Finish interchange CNOT section (and revise it)
+* Lay summary
+* Check spelling with SW
 * Make sure footnote 8 is in the right page

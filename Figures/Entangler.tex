@@ -9,6 +9,6 @@
   \node[font=\scriptsize\itshape, opacity=0.9, above right=3mm and -3mm of leftPoint] (QPUA) {QPU A};
   \node[font=\scriptsize\itshape, opacity=0.9, below right=3mm and -3mm of leftPoint] (QPUB) {QPU B};
 \end{tikzpicture}
-\caption{Implementation of the cat-entangler. An ebit is used to make the information in QPU B's wire available to QPU A. A doubled line indicates the wire holds classical information (a bit). For any input state \(\alpha\ket{0} + \beta\ket{1}\), the output is \(\alpha\ket{0,0} + \beta\ket{1,1}\).}
+\caption{Implementation of the cat-entangler. An ebit is used to make the information in QPU \(B\)'s wire available to QPU \(A\). A doubled line indicates the wire holds classical information. Hence, the \(X\) gate is classically controlled, and the line that crosses the boundary represents classical communication. For any input state \(\alpha\ket{0} + \beta\ket{1}\), the output is \(\alpha\ket{0,0} + \beta\ket{1,1}\).}
 \label{fig:cat-entangler}
 \end{figure}

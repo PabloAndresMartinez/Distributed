@@ -132,8 +132,12 @@
 % \graduationdate{February 1786}
 
 %% Specify the abstract here.
-\abstract{%
+\abstract{
+Quantum computers are capable of efficiently executing computations that are intractable by classical computers. This difference in computational power is achieved by exploiting some properties of quantum mechanics. However, this same properties impose tough challenges on the development of large scale quantum computers. Small quantum computers have already been built, and some experts have proposed a distributed grid of small quantum computers as an alternative to large scale monolithic quantum architectures.
+
+Currently the literature offers no support for the design of distributed quantum programs. This thesis aims to cover this gap, presenting an algorithm that automatically distributes any input quantum circuit. The algorithm proceeds by reducing the problem of efficiently distributing a quantum circuit to the problem of hypergraph partitioning. Two extensions of our algorithm are proposed, and the algorithm is evaluated by distributing a collection of benchmark circuits drawn from the literature.
 }
+
 
 %% Now we start with the actual document.
 \begin{document}
@@ -146,8 +150,17 @@
 %% This creates the title page
 \maketitle
 
+\begin{laysummary}
+  \input{Chapters/LaySummary}
+\end{laysummary}
+
 %% Acknowledgements
 \begin{acknowledgements}
+I would like to sincerely thank my supervisor, Chris Heunen, for all the advice and support. Our discussions have always been enjoyable, and I am grateful for the freedom he has given me to develop this thesis as I thought best.
+
+I would also like to thank the CDT on Pervasive Parallelism, for sponsoring my four-year MSc+PhD programme. This thesis is submitted for the MSc by Research phase of the programme.
+
+Finally, I would like to thank my family and friends, that keep supporting me wherever I go. And especially to my friends here in Edinburgh: thanks for making me feel like home.
 \end{acknowledgements}
 
 %% Next we need to have the declaration.

@@ -549,6 +549,10 @@ Computer Science}}
 %% an acknowledgements and declation env.
 %%
 
+\newenvironment{laysummary}
+   {\renewcommand{\abstractname}{Informal Summary}\begin{mainabs}}
+   {\end{mainabs}\renewcommand{\abstractname}{Abstract}}   
+
 \newenvironment{acknowledgements}
    {\renewcommand{\abstractname}{Acknowledgements}\begin{mainabs}}
    {\end{mainabs}\renewcommand{\abstractname}{Abstract}}   

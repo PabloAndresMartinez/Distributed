@@ -38,7 +38,7 @@ The entanglement distillation protocol takes a collection of Werner states and r
 
   \item For each pair of Werner states, measure the qubits corresponding to the Werner state that acted as the target of the BXOR -- this will require one measurement in each QPU. The outcome of the two measurements will match precisely in the cases where the fifth column of Table~\ref{tab:Werners} shows no \(X\) error. Examining the table, we can calculate the probability of that event: {\small \[T(F) = F^2 + \frac{2}{3} F(1-F) + \frac{5}{9} (1-F)^2\]}which, for \(F > \frac{1}{2}\), is always over a half.
 
-  \item If the outcome of both measurements matched, keep the other two qubits (i.e.\ the control Werner state). Otherwise, discard them, not to be used again. Among the eight cases when we keep the Werner state, in two of them (grayed rows in Table~\ref{tab:Werners}) the state we keep has no errors. This happens with probability: {\small \[P(F) = \frac{F^2 + 1/9(1-F)^2}{T(F)}\]}Thus, the kept qubit pairs are all Werner states with fidelity \(P(F)\) which, as shown in Figure~\ref{fig:fidelity}, is greater than \(F\) whenever \(F > \frac{1}{2}\).
+  \item If the outcome of both measurements matched, keep the other two qubits (i.e.\ the control Werner state). Otherwise, discard them, not to be used again. Among the eight cases when we keep the Werner state, in two of them (greyed rows in Table~\ref{tab:Werners}) the state we keep has no errors. This happens with probability: {\small \[P(F) = \frac{F^2 + 1/9(1-F)^2}{T(F)}\]}Thus, the kept qubit pairs are all Werner states with fidelity \(P(F)\) which, as shown in Figure~\ref{fig:fidelity}, is greater than \(F\) whenever \(F > \frac{1}{2}\).
 \end{enumerate}
 
 \input{Figures/WernerTable}
@@ -56,7 +56,7 @@ We now explain how ebits are used to allow a QPU to peek into another's qubits. 
 
 We aim to split a given circuit and distribute the fragments across multiple QPUs. The gates that should operate over qubits on different QPUs are known as \textit{non-local} gates. As we previously mentioned in \S\ref{Models}, any circuit can be converted to Clifford+T circuit. In Clifford+T, the only gate that operates on more than one qubit is the CNOT. Hence, we only need to understand how CNOTs can be implemented non-locally.
 
-The construction we will use is a slight variation of what was proposed by \citet{NonLocalCNOT}, and its scheme is shown in Figure~\ref{fig:nonlocalCNOT}. In principle, we will use an \textit{ebit} per non-local CNOT. We will call the QPU that holds the target qubit (the one with a \(\oplus\)) the `target QPU' and similarly for the control qubit. 
+The construction we will use is a slight variation of what was proposed by \citet{NonLocalCNOT}, and its scheme is shown in Figure~\ref{fig:nonlocalCNOT}. The dashed grey line in the figure represents the \textit{boundary} where QPU \(A\) ends and QPU \(B\) starts. This is the convention we will use on the figures throughout this thesis. All of the wires (qubits) and quantum gates above the dashed line should be implemented on one QPU, and the ones below it on another. Any line crossing the boundary represents communication across QPUs, which for a valid distributed circuit is only allowed if it is an ebit -- a curved wire -- or it represents classical communication -- as in Figure~\ref{fig:cat-entangler}. We will call the QPU that holds the target qubit (the one with a \(\oplus\)) the `target QPU' and similarly for the control qubit. 
 
 \input{Figures/nonLocalCNOT}
 
