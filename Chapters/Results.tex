@@ -70,7 +70,7 @@ Our code was compiled using GHC version 8.0.2, with the optimisation flag \textt
 \end{tabular}
 \end{table}
 
-Figure~\ref{fig:results1} shows, for different circuits, the proportion of CNOTs that become non-local once the circuit is partitioned. We also display the proportion of ebits the circuit requires. The key idea behind our algorithm was to take advantage of the remote-control and/or remote-target methods to implement multiple CNOTs using a single ebit. The larger the difference between the two proportions shown in Figure~\ref{fig:results1} is, the more successful this idea has been. However, the definitive measure of success -- and what our algorithm aims to optimise -- is the proportion of ebits (dashed bars). 
+Figure~\ref{fig:results1} shows, for different circuits, the proportion of CNOTs that become non-local once the circuit is partitioned. We also display the proportion of ebits the circuit requires. The key idea behind our algorithm is to take advantage of the remote-control and/or remote-target methods to implement multiple CNOTs using a single ebit. A naive approach would require one ebit per non-local CNOT instead. Therefore, the larger the difference between the two proportions shown in Figure~\ref{fig:results1} is, the more successful our approach has been in reducing the ebit count. %However, the definitive measure of success -- and what our algorithm aims to optimise -- is the proportion of ebits (dashed bars). 
 
 \input{Figures/Results/1}
 

@@ -13,6 +13,9 @@
       \coordinate[above left=7.2mm and -6mm of circuit.west] (leftPoint);
       \coordinate[above right=7.2mm and -6mm of circuit.east] (rightPoint);
       \pic (cut) {cut=leftPoint/rightPoint};
+      \node[right=8.1mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=9.8mm and 18.7mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
+      \node[right=29.5mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {a)};
     \end{tikzpicture}
   };
@@ -29,6 +32,10 @@
       \coordinate[above left=7.2mm and -6mm of circuit.west] (leftPoint);
       \coordinate[above right=7.2mm and -6mm of circuit.east] (rightPoint);
       \pic (cut) {cut=leftPoint/rightPoint};
+      \node[right=29.5mm of circuit.west, opacity=0.9] {\footnotesize \(\alpha\)};
+      \node[above right=9.8mm and 18.7mm of circuit.west, opacity=0.9] {\footnotesize \(\beta\)};
+      \node[right=40.5mm of circuit.west, opacity=0.9] {\footnotesize \(\gamma\)};
+      \node[right=8.1mm of circuit.west, opacity=0.9] {\footnotesize \(\chi\)};
       \node[right=-3mm of circuit.north west, font=\itshape] (text) {c)};
     \end{tikzpicture}
   };
@@ -75,6 +82,6 @@
   };
 \end{tikzpicture}
 \vspace*{5mm}
-\caption{Example of a circuit \textit{a)} where interchanging the first two gates saves an ebit for the proposed partition. The byproduct gate in circuit \textit{c)} will be implemented locally, so its addition has no impact. Two of the CNOTs in \textit{c)} can be implemented using a single ebit. Hypergraph \textit{b)} corresponds to the circuit \textit{a)}. Hypergraph \textit{d)} corresponds to \textit{c)}, and it has one less cut.}
+\caption{Example of a circuit \textit{a)} where interchanging CNOTs \(\alpha\) and \(\beta\) saves an ebit. The byproduct gate \(\chi\) in circuit \textit{c)} will be implemented locally, so its addition has no impact. CNOTs \(\alpha\) and \(\gamma\) can be implemented using a single ebit after the interchange. Hypergraph \textit{b)} corresponds to the circuit \textit{a)}. Hypergraph \textit{d)} corresponds to \textit{c)}, and it has one less cut.}
 \label{fig:interchangeChallenge}
 \end{figure}
