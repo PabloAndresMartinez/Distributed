@@ -1,2 +1,26 @@
 \chapter{Hypergraph Partitioning}
 \label{chap:HypPart}
+
+In this appendix we review the hypergraph partitioning problem and give a brief explanation of how \texttt{KaHyPart}~\citep{KaHyPart} solves it. The version of \texttt{KaHyPart} we used can be found at: \url{https://github.com/SebastianSchlag/kahypar}.
+
+A hypergraph is defined as a pair \((V,H)\), where \(V\) is some arbitrary set, known as the set of vertices, and \(H \subseteq 2^V\) is the subset of hyperedges. Thus, each hyperedge is defined as a subset of vertices, which we refer to as the vertices reached by the hyperedge. The hypergraph partitioning problem has as input a hypergraph \((V,H)\) and two parameters \((k,\varepsilon)\), where \(k\) is the number of blocks -- sub-hypergraphs -- we wish to partition the hypergraph into, and \(\varepsilon\) is known as the load-imbalance tolerance. The output is an assignment \(f\colon V \to \{1,2 \dots k\}\) of vertices to blocks, satisfying\footnote{In the following mathematical definitions we use \(\lVert A \rVert\) to refer to the cardinal of set \(A\) (i.e.\ the number of elements in it).}:
+
+\begin{itemize}
+  \item \textit{Load-balance}: \(\forall i \in \{1,2 \dots k\}\colon \,\, \lVert \{v \in V \mid f(v) = i\} \rVert \, < \, (1+\varepsilon)\frac{\lVert V \rVert}{k} \).
+  \item \textit{Minimal number of cuts}: Given a procedure for calculating a number \(\chi_g \in \mathbb{N}\) determined by an assignment \(g\colon V \to \{1,2 \dots k\}\), ensure that for each of the possible assignments \(f'\), it holds that \(f \not = f' \Rightarrow  \chi_f < \chi_{f'}\). The number \(\chi_g\) is known as the optimisation metric, and it may be calculated in multiple ways, each of them corresponding to a different variation of the hypergraph partitioning problem:
+    \begin{enumerate} 
+      \renewcommand{\theenumi}{\alph{enumi})}
+      \item A commonly used metric is the \textit{cut} metric, defined as \[\chi_g := \lVert \{h \in H \mid \exists v,u \in h\colon g(v) \not = g(u) \} \rVert\] which corresponds to the number of hyperedges that reach vertices assigned to different blocks. Such hyperedges are said to be cut. 
+      \item The metric used in this thesis is defined as \(\chi_g := \sum_{h \in H} \ \lambda_g(h)\!-\! 1\) where \[\lambda_g(h) = \lVert \{i \in \mathbb{N} \mid \exists v \in h\colon g(v)=i \} \rVert\] This metric, known as the \(\lambda\!-\!1\) metric, not only takes into account the number of cut hyperedges, but also how many different blocks they reach.
+    \end{enumerate}
+\end{itemize}
+
+The hypergraph partitioning problem and many of its variations are NP-complete problems \citep{NP-complete}. Therefore, fast algorithms to solve it can not guarantee that the solution they give is optimal, as to do so would require exponential time (unless \(P = NP\)). \texttt{KaHyPart} is a state-of-art hypergraph partitioner, which has been shown to perform better than the rest of its competitors~\citep{KaHyPart}. \texttt{KaHyPart} is comprised by three consecutive phases:
+
+\begin{enumerate}
+  \item \textit{Coarsening}: Groups of highly connected vertices are identified, and each of these groups is temporarily substituted by a single vertex. All of the hyperedges that reached a vertex in one of these groups now reach the vertex that substituted the group. This phase allows to reduce the size of the hypergraph, and it ensures that highly connected vertices are not assigned to different blocks during the second phase of the algorithm.
+  \item \textit{Initial partition}: The coarsened hypergraph is partitioned into \(k\) blocks. To do so, the hypergraph is first split in two blocks with equal number of vertices each, trying to minimise the chosen metric \(\chi_g\). Then, each block is recursively split further, until \(k\) blocks are obtained.
+  \item \textit{Local search optimisation}: In this final phase, each of the groups of vertices substituted in the coarsening phase are restored. A local search is performed over the blocks, moving some of their vertices to neighbouring blocks whenever the reallocation yields a smaller value of the chosen metric \(\chi_g\). This reallocation must not violate the load-balance condition.
+\end{enumerate}
+
+In \S\ref{BothEnds} we make use of a variation of the hypergraph partitioning problem where vertices have a weight assigned to them. Adjusting the above algorithm to account for this variation is straight-forward, we just need to change the checks of the load-balance condition to be dependent on the sum of the weights from each block, instead of on the number of vertices.
