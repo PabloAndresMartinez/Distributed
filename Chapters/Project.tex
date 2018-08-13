@@ -362,7 +362,7 @@ It may seem like pre-processing the circuit so it has the minimum possible numbe
   \item \textit{Interchanging CNOT gates adds new CNOTs}: The CNOT interchange problem is substantially different from the one we discussed and solved in \S\ref{BothEnds}. The essence of our solution was to represent all of the potential choices in a single hypergraph. However, if we were to interchange a pair of CNOTs, new choices would become available: Is it worth to interchange the CNOTs again with their new neighbours? Should the byproduct CNOT be itself interchanged further? Although the number of options to take into account is finite, it increases considerably fast. Furthermore, each choice would not be independent from the rest -- as some interchanges are only available if others have been done before -- so the structure of the hypergraph would have to be quite complex in order to accommodate this information.
 \end{itemize}
 
-Instead of representing these CNOT interchanges within the hypergraph partioning problem, we may abandon the idea of guaranteeing the optimal solution, and approach this problem through pre-processing and post-processing. We suggest that a reasonable approach in that case would be to:
+Instead of representing these CNOT interchanges within the hypergraph partitioning problem, we may abandon the idea of guaranteeing the optimal solution, and approach this problem through pre-processing and post-processing. We suggest that a reasonable approach in that case would be to:
 \begin{enumerate} 
 \item Apply a pre-processing phase that finds an equivalent circuit whose CNOT count is minimal.
 \item Apply our algorithm, as described in \S\ref{EfficientDistrib}, which decides how to partition the circuit. 
