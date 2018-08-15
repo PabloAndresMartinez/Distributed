@@ -1,7 +1,7 @@
 \chapter{Hypergraph Partitioning}
 \label{chap:HypPart}
 
-In this appendix we review the hypergraph partitioning problem and give a brief explanation of how \texttt{KaHyPart}~\citep{KaHyPart} solves it. The version of \texttt{KaHyPart} we used can be found at: \url{https://github.com/SebastianSchlag/kahypar}.
+In this appendix we review the hypergraph partitioning problem and give a brief explanation of how \texttt{KaHyPar}~\citep{KaHyPar} solves it. The version of \texttt{KaHyPar} we used can be found at: \url{https://github.com/SebastianSchlag/kahypar}.
 
 A hypergraph is defined as a pair \((V,H)\), where \(V\) is some arbitrary set, known as the set of vertices, and \(H \subseteq 2^V\) is the subset of hyperedges. Thus, each hyperedge is defined as a subset of vertices, which we refer to as the vertices reached by the hyperedge. The hypergraph partitioning problem has as input a hypergraph \((V,H)\) and two parameters \((k,\varepsilon)\), where \(k\) is the number of blocks -- sub-hypergraphs -- we wish to partition the hypergraph into, and \(\varepsilon\) is known as the load-imbalance tolerance. The output is an assignment \(f\colon V \to \{1,2 \dots k\}\) of vertices to blocks, satisfying\footnote{In the following mathematical definitions we use \(\lVert A \rVert\) to refer to the cardinal of set \(A\) (i.e.\ the number of elements in it).}:
 
@@ -15,7 +15,7 @@ A hypergraph is defined as a pair \((V,H)\), where \(V\) is some arbitrary set, 
     \end{enumerate}
 \end{itemize}
 
-The hypergraph partitioning problem is an NP-complete problem \citep{NP-complete}. Therefore, fast algorithms to solve it can not guarantee that the solution they give is optimal, as to do so would require exponential time (unless \(P = NP\)). \texttt{KaHyPart} is a state-of-art hypergraph partitioner, which has been shown to perform better than the rest of its competitors~\citep{KaHyPart}. \texttt{KaHyPart} is comprised by three consecutive phases:
+The hypergraph partitioning problem is an NP-complete problem \citep{NP-complete}. Therefore, fast algorithms to solve it can not guarantee that the solution they give is optimal, as to do so would require exponential time (unless \(P = NP\)). \texttt{KaHyPar} is a state-of-art hypergraph partitioner, which has been shown to perform better than the rest of its competitors~\citep{KaHyPar}. \texttt{KaHyPar} is comprised by three consecutive phases:
 
 \begin{enumerate}
   \item \textit{Coarsening}: Groups of highly connected vertices are identified, and each of these groups is temporarily substituted by a single vertex. All of the hyperedges that reached a vertex in one of these groups now reach the vertex that substituted the group. This phase allows us to reduce the size of the hypergraph, and it ensures that highly connected vertices are not assigned to different blocks during the second phase of the algorithm.
@@ -23,4 +23,4 @@ The hypergraph partitioning problem is an NP-complete problem \citep{NP-complete
   \item \textit{Local search optimisation}: In this final phase, each of the groups of vertices substituted in the coarsening phase are restored. A local search is performed over the blocks, moving some of their vertices to neighbouring blocks whenever the reallocation yields a smaller value of the chosen metric \(\chi_g\). This reallocation must not violate the load-balance condition.
 \end{enumerate}
 
-In \S\ref{BothEnds} we make use of a variation of the hypergraph partitioning problem where vertices have a weight assigned to them. Adjusting the above algorithm to account for this variation is straight-forward; we just need to change the checks of the load-balance condition to be dependent on the sum of the weights from each block, instead of on the number of vertices. \texttt{KaHyPart} provides this variation of the problem among its options.
+In \S\ref{BothEnds} we make use of a variation of the hypergraph partitioning problem where vertices have a weight assigned to them. Adjusting the above algorithm to account for this variation is straight-forward; we just need to change the checks of the load-balance condition to be dependent on the sum of the weights from each block, instead of on the number of vertices. \texttt{KaHyPar} provides this variation of the problem among its options.
