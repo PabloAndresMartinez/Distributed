@@ -322,3 +322,16 @@ interesting3_C (a,b,c,d) = do
   gate_Z_at a
   qnot_at d `controlled` a
   return (a,b,c,d)
+
+interesting4 :: IO ((Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit), (Qubit,Qubit,Qubit,Qubit), String)
+interesting4 = return (interesting4_C, (qubit,qubit,qubit,qubit), "interesting4")
+interesting4_C :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
+interesting4_C (a,b,c,d) = do
+  qnot_at a `controlled` c
+  qnot_at b `controlled` c
+  gate_H_at b
+  qnot_at c `controlled` d
+  qnot_at b `controlled` c
+  gate_H_at d
+  qnot_at b `controlled` d
+  return (a,b,c,d)
