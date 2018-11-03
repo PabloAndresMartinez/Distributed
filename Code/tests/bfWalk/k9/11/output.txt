@@ -1,0 +1,31 @@
+
+Gate count:
+ 8342: "CDiscard"
+18084: "H, arity 1"
+10643: "Init0"
+ 8342: "Meas"
+10275: "T*, arity 1"
+10808: "T, arity 1"
+ 2301: "Term0"
+  102: "X, arity 1"
+ 4171: "X, arity 1", controls 1
+ 4171: "Z, arity 1", controls 1
+33932: "not, arity 1", controls 1
+Total gates: 111171
+Inputs: 73
+Outputs: 73
+Qubits in circuit: 130
+Original gate count: 61119
+Original qubit count: 105
+Partition: [3,1,1,1,1,1,1,0,1,1,1,0,0,1,1,0,0,0,1,5,0,0,0,8,5,0,0,8,5,5,4,4,5,5,4,4,4,5,4,4,4,5,5,4,4,6,5,5,4,6,6,5,6,6,6,6,6,8,8,6,8,8,3,3,6,2,2,3,6,8,6,8,8,7,7,7,7,7,7,7,8,8,8,7,7,7,2,2,2,2,2,2,7,7,2,2,3,3,3,3,3,2,2,3,3]
+Total number of ebits: 4171
+
+Number of vertices: 25695
+Number of hyperedges: 34148
+
+Circuit: bfWalk
+Extensions: PullCNOTs (limit: 5), BothRemotes, 
+k = "9"; epsilon = "0.03"
+CPU Time: 83.43s
+
+Number of non-local CNOTs: 14006
