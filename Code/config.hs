@@ -7,7 +7,7 @@ import Quipper.Printing
 kahyparDir = "../../../../"
 
 -- Partitioning parameters
-k = "4"
+k = "15"
 epsilon = "0.03"
 
 -- Set True to activate each extension, False to deactivate it
@@ -19,7 +19,7 @@ pullLimit :: Int
 pullLimit = 5 -- Set to -1 for infinite (i.e. no limit)
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = gse
+circuit = qft 200
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 
