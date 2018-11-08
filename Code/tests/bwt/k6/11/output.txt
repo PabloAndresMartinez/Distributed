@@ -31,4 +31,4 @@ Extensions: PullCNOTs (limit: 5), BothRemotes,
 k = "6"; epsilon = "0.03"
 CPU Time: 19.17s
 
-Number of non-local CNOTs: 12393
+Number of non-local CNOTs: 11784

@@ -3,520 +3,159 @@
 thefile=../../../data.dat
 
 cd bfWalk
-cd k2
-cd 00
+cd k2/11
 rm $thefile
 echo Circuit CNOTs NonLocal Ebits OrigQubits TotQubits Vertices Hyperedges >> $thefile
 echo "" >> $thefile
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k3/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k4/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k5/11
 ../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
+cd ../../k6/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k7/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k8/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k9/11
 ../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
+cd ../../k10/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k11/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k12/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k13/11
 ../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
+cd ../../k14/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k15/11
 ../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
+cd ../../../
 
 cd bwt
-cd k2
-cd 00
+cd k2/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k3/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k4/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k5/11
 ../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
+cd ../../k6/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k7/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k8/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k9/11
 ../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
+cd ../../k10/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k11/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k12/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k13/11
 ../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
+cd ../../k14/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k15/11
 ../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
+cd ../../../
 
 cd gse
-cd k2
-cd 00
+cd k2/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k3/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k4/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k5/11
 ../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
+cd ../../k6/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k7/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k8/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k9/11
 ../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
+cd ../../k10/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k11/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k12/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k13/11
 ../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
+cd ../../k14/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k15/11
 ../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
+cd ../../../
 
 cd usvR
-cd k2
-cd 00
+cd k2/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k3/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k4/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k5/11
 ../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
+cd ../../k6/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k7/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k8/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k9/11
 ../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
+cd ../../k10/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k11/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k12/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k13/11
 ../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
+cd ../../k14/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k15/11
 ../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd qft10
-cd k2
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd qft25
-cd k2
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd qft50
-cd k2
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd qft100
-cd k2
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
-../../../getData >> $thefile
-cd ..
-cd 01
-../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
+cd ../../../
 
 cd qft200
-cd k2
-cd 00
+cd k2/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k3/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k4/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k5/11
 ../../../getData >> $thefile
-cd ../..
-cd k3
-cd 00
+cd ../../k6/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k7/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k8/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k9/11
 ../../../getData >> $thefile
-cd ../..
-cd k5
-cd 00
+cd ../../k10/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k11/11
 ../../../getData >> $thefile
-cd ..
-cd 10
+cd ../../k12/11
 ../../../getData >> $thefile
-cd ..
-cd 11
+cd ../../k13/11
 ../../../getData >> $thefile
-cd ../..
-cd k7
-cd 00
+cd ../../k14/11
 ../../../getData >> $thefile
-cd ..
-cd 01
+cd ../../k15/11
 ../../../getData >> $thefile
-cd ..
-cd 10
-../../../getData >> $thefile
-cd ..
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd bfWalk
-cd k10
-cd 10
-../../../getData >> $thefile
-cd ../../..
-
-cd bwt
-cd k10
-cd 10
-../../../getData >> $thefile
-cd ../../..
-
-cd gse
-cd k10
-cd 01
-../../../getData >> $thefile
-cd ../../..
-
-cd usvR
-cd k10
-cd 11
-../../../getData >> $thefile
-cd ../../..
-
-cd qft200
-cd k10
-cd 01
-../../../getData >> $thefile
-cd ../../..
+cd ../../../
