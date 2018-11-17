@@ -79,7 +79,7 @@ getNonLocal gates partition = nonLocal
 main = do
   [path] <- getArgs
   putStrLn path
-  (circ,shape,_) <- qft 200
+  (circ,shape,_) <- usvR
   partFile <- readFile $ path++"partition.hgr"
   let
     (_,((_,theGates,_,nWires),_),_) = encapsulate_generic id (prepareCircuit circ shape) shape

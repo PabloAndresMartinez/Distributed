@@ -45,7 +45,7 @@ bwt_C _ = BWT.qrwbwt oracle s dt
     dt = pi/180 -- timestep size
     oracle = BWT.oracle_orthodox f g -- the default oracle construction for the two given bitstrings
       where
-        n = 10 -- input bitstring length
+        n = 10 -- tree height (input bitstring length)
         f = take n (True : False : f) -- a function
         g = take n (False : True : g) -- another function
         
@@ -88,7 +88,8 @@ usvR = return (usvR_C, (), "usvR")
 usvR_C :: () -> Circ USVDef.TwoPoint
 usvR_C _ = USV.algorithm_R b l m i0 p randomgen
   where
-    b = (replicate 2 (replicate 2 1))
+    n = 3
+    b = (replicate n (replicate n 1))
     l = ceiling $ USVDef.norm $ head b
     m = p-1
     i0 = 0
