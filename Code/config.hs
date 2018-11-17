@@ -7,7 +7,7 @@ import Quipper.Printing
 kahyparDir = "../../../../"
 
 -- Partitioning parameters
-k = "11"
+k = "9"
 epsilon = "0.03"
 
 -- Set True to activate each extension, False to deactivate it
