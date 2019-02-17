@@ -1,0 +1,68 @@
+Checking best Refinement Algorithm
+Data from best of all of the 12 partitioning algorithms.
+/home/pablo/Documents/PhD/MSc/thesis/Code/tests/usvR/k5
+
+
+0
+3.72s
+ 'Con - 1' Cost: 56736
+
+
+1
+5.13s
+ 'Con - 1' Cost: 46369
+
+
+2
+4.73s
+ 'Con - 1' Cost: 47450
+
+
+3
+5.59s
+ 'Con - 1' Cost: 45142
+
+
+4
+5.69s
+ 'Con - 1' Cost: 44035
+
+
+5
+25.75s
+ 'Con - 1' Cost: 41965
+
+
+6
+271.35s
+ 'Con - 1' Cost: 42404
+
+
+7
+8.99s
+ 'Con - 1' Cost: 44946
+
+
+8
+12.50s
+ 'Con - 1' Cost: 43418
+
+
+9
+12.12s
+ 'Con - 1' Cost: 41213
+
+
+10
+32.69s
+ 'Con - 1' Cost: 43948
+
+
+11
+3.67s
+ 'Con - 1' Cost: 60546
+
+
+12
+3.61s
+ 'Con - 1' Cost: 60546

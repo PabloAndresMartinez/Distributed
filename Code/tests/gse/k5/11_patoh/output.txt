@@ -1,0 +1,27 @@
+
+Gate count:
+ 36034: "CDiscard"
+     8: "Discard"
+ 79658: "H, arity 1"
+ 37632: "Init0"
+ 36037: "Meas"
+ 18576: "S*, arity 1"
+ 18655: "S, arity 1"
+  6348: "T*, arity 1"
+  6462: "T, arity 1"
+  1587: "Term0"
+ 58469: "X, arity 1"
+ 18017: "X, arity 1", controls 1
+ 18017: "Z, arity 1", controls 1
+106192: "not, arity 1", controls 1
+Total gates: 441692
+Inputs: 0
+Outputs: 3
+Qubits in circuit: 20
+Original gate count: 225488
+Original qubit count: 13
+Partition: [2,2,3,3,4,4,0,0,0,1,1,3,2]
+Total number of ebits: 18017
+
+
+CPU Time: 417.19s

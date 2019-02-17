@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo Checking best Refinement Algorithm > stats.dat
+echo Data from best of all of the 12 partitioning algorithms. >> stats.dat
+
+pwd >> stats.dat
+
+for i in `seq 0 12`;
+do
+  echo "" >> stats.dat
+  echo "" >> stats.dat
+  echo $i >> stats.dat 
+  { /usr/bin/time -f "%es" ./PaToH hypergraph.hgr 5 FI=0.03 UM=O PQ=Q NI=12 PA=13 RA=$i | grep "Cost" >> stats.dat; } 2>> stats.dat
+done

@@ -200,13 +200,16 @@ bothHyp (g:gs) n cnot = case g of
                              Just ((_,ws,o,ht):es) -> Just ((nan,[],n,Unknown):(n+1,ws,o,ht):es)
       nan = 0
 
-hypToString :: Hypergraph -> Int -> String
-hypToString hyp n = init fileData -- init to remove last \n
+hypToString :: Cfg.PartAlg -> Hypergraph -> Int -> (String, Int, Int)
+hypToString alg hyp n = (fileData, nHedges, nVertices)
   where    
     flatData = concat $ map (\(v,vss) -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss) (M.toList hyp)
-    fileData = (unlines . (map (unwords . (map show)))) $ [length flatData, nVertices, 10] : (map rmdups flatData) ++ verticesWeights
+    fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map rmdups flatData) ++ verticesWeights
+    fstLine Cfg.Kahypar = [nHedges, nVertices, 10]
+    fstLine Cfg.Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
     verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]
     nVertices = foldr (max . foldr max 0) 0 flatData
+    nHedges   = length flatData
 
 -- ## Building the distributed circuit ## --
 type Block = Int
@@ -308,20 +311,21 @@ main = do
     circ  = prepareCircuit input shape mode
     extractedCirc@(_, ((_,theGates,_,nWires),_), _) = encapsulate_generic id circ shape
     hypergraph = buildHyp theGates nWires mode
-    fileData = hypToString hypergraph nWires
-    [hypHEdges, hypVertices, _] = (words . head . lines) fileData
+    (fileData, hypHEdges, hypVertices) = hypToString Cfg.algorithm hypergraph nWires
+    script Cfg.Kahypar = Cfg.partDir++"KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p "++Cfg.partDir++Cfg.subalgorithm++" -q true"
+    script Cfg.Patoh = Cfg.partDir++"PaToH hypergraph.hgr "++k++" FI="++epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0"
     in
       if head fileData == '0' then do
         print_generic Cfg.outputAs circ shape
         putStrLn $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
       else do
         writeFile "hypergraph.hgr" $ fileData
-        HSH.run $ Cfg.kahyparDir++"KaHyPar -h hypergraph.hgr -k "++k++" -e "++epsilon++" -m direct -o km1 -p "++Cfg.kahyparDir++"kahypar/config/km1_direct_kway_alenex17.ini -q true" :: IO ()
+        HSH.run $ script Cfg.algorithm :: IO ()
         HSH.run $ "mv hypergraph.hgr.part* partition.hgr" :: IO ()
         hypPart <- readFile "partition.hgr"
         let 
           gateCountInput = length theGates
-          partition = map read (lines hypPart)
+          partition = map read (concat . map words . lines $ hypPart)
           (newCircuit, nExtraWires, nEbits) = buildCircuit partition hypergraph extractedCirc
           in do
             --print_generic Preview input shape
@@ -336,8 +340,8 @@ main = do
             putStrLn $ "Partition: " ++ show (take nWires partition)
             putStrLn $ "Total number of ebits: " ++ show nEbits
             putStrLn $ ""
-            putStrLn $ "Number of vertices: " ++ hypVertices
-            putStrLn $ "Number of hyperedges: " ++ hypHEdges
+            putStrLn $ "Number of vertices: " ++ show hypVertices
+            putStrLn $ "Number of hyperedges: " ++ show hypHEdges
             putStrLn $ ""
             putStrLn $ "Circuit: "++name
             putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs (limit: "++show Cfg.pullLimit++"), " else "") ++ (if snd mode then "BothRemotes, " else "")

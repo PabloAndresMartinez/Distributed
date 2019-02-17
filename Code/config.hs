@@ -3,11 +3,13 @@ module Distributer.Configuration where
 import Distributer.Examples
 import Quipper.Printing
 
--- Path to KaHyPar program
-kahyparDir = "../../../../"
+-- Path to the directory containing the hypergraph partitioning program
+partDir = "../../../../"
 
 -- Partitioning parameters
-k = "9"
+algorithm = Patoh
+subalgorithm = sea18
+k = "5"
 epsilon = "0.03"
 
 -- Set True to activate each extension, False to deactivate it
@@ -19,7 +21,7 @@ pullLimit :: Int
 pullLimit = 5 -- Set to -1 for infinite (i.e. no limit)
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = usvR
+circuit = qft 200
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 
@@ -58,3 +60,13 @@ interesting2
 interesting3
 
 -}
+
+-- DO NOT CHANGE (aliases configuration) --
+
+data PartAlg = Kahypar | Patoh
+
+cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used
+alenex17 = "kahypar/config/km1_direct_kway_alenex17.ini"
+sea17 = "kahypar/config/km1_direct_kway_sea17.ini"
+sea18 = "kahypar/config/km1_direct_kway_sea18.ini"
+gecco18 = "kahypar/config/km1_direct_kway_gecco18.ini" -- Evolutionary Algorith,
