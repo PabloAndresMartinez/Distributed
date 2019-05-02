@@ -1,4 +1,0 @@
-#!/bin/bash
-
-(/usr/bin/time -f "CPU Time: %es" ./Distributer) > output.txt 2>&1
-./getNonLocal ./

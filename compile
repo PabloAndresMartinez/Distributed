@@ -1,13 +1,7 @@
-!#/bin/bash/
+#!/bin/bash
 
-pdflatex thesis
-bibtex thesis
-pdflatex thesis
-pdflatex thesis
+quipper Distributer.hs Examples.hs config.hs
+quipper getNonLocal.hs Examples.hs config.hs
 
-rm *.aux
-rm *.toc
-rm *.log
-rm *.bbl
-rm *.blg
-rm Chapters/*aux
+rm *o
+rm *hi

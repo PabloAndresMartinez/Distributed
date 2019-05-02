@@ -1,7 +1,0 @@
-#!/bin/bash
-
-quipper Distributer.hs Examples.hs config.hs
-quipper getNonLocal.hs Examples.hs config.hs
-
-rm *o
-rm *hi

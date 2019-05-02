@@ -1,5 +1,0 @@
-Distributer: ../../../../gseData/h_1e_ascii: openFile: does not exist (No such file or directory)
-Command exited with non-zero status 1
-CPU Time: 0.00s
-
-Number of non-local CNOTs: 252265
