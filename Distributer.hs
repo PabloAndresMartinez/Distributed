@@ -11,7 +11,7 @@ import Libraries.RandomSource
 import QuipperLib.Unboxing
 
 import qualified Data.Map as M
-import Data.List (sort, sortBy)
+import Data.List (sort, sortBy, nub)
 import qualified HSH as HSH
 import Distributer.Examples
 import qualified Distributer.Configuration as Cfg
@@ -19,11 +19,6 @@ import qualified Distributer.Configuration as Cfg
 type Mode = (Bool,Bool) -- (PullCNOTs,BothRemotes)
 
 -- ## Auxiliary functions ## --
-rmdups :: (Eq a) => [a] -> [a]
-rmdups []     = []
-rmdups (x:xs) = if x `elem` xs' then xs' else (x:xs')
-  where
-    xs' = rmdups xs
 
 targetOf :: Gate -> Wire
 targetOf gate = case gate of
@@ -211,8 +206,8 @@ bothHyp (g:gs) n cnot = case g of
 hypToString :: Cfg.PartAlg -> Hypergraph -> Int -> (String, Int, Int)
 hypToString alg hyp n = (fileData, nHedges, nVertices)
   where    
-    flatData = concat $ map (\(v,vss) -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss) (M.toList hyp)
-    fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map rmdups flatData) ++ verticesWeights
+    flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss ++ hs) [] hyp
+    fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map nub flatData) ++ verticesWeights
     fstLine Cfg.Kahypar = [nHedges, nVertices, 10]
     fstLine Cfg.Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
     verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]
@@ -222,6 +217,7 @@ hypToString alg hyp n = (fileData, nHedges, nVertices)
 -- ## Building the distributed circuit ## --
 type Block = Int
 type Partition = M.Map Wire Block -- The wire 'w' is in the block given by: (partition M.! w). 
+type NonLocalCNOT = (Int,Wire,Wire,Int,Int,HedgeType) -- (i,v,w,p,o,ht); i (o) initial (final) pos of hedge it belongs to, v (w) a wire of the CNOT, p its position, ht its type
 type EDic = M.Map (Wire,Block,HedgeType) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
 data EbitComponent = Entangler (Wire,Block,HedgeType) Int | Disentangler (Wire,Block,HedgeType) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
 
@@ -244,8 +240,8 @@ getConnections :: EbitComponent -> (Wire,Block,HedgeType)
 getConnections (Entangler    ws _) = ws
 getConnections (Disentangler ws _) = ws
 
-buildCircuit :: (QCData qin, QCData qout) => Partition -> Hypergraph -> (qin, BCircuit, qout) -> (qin -> Circ qout, Int, Int)
-buildCircuit partition hgraph oldCirc = (unencapsulate_generic newCirc, nWires, nEbits)
+buildCircuit :: (QCData qin, QCData qout) => Partition -> Hypergraph -> (qin, BCircuit, qout) -> (qin -> Circ qout, Int)
+buildCircuit partition hgraph oldCirc = (unencapsulate_generic newCirc, nEbits)
   where
     (inp,((ar1,gates,ar2,n),namespace),out) = oldCirc
     (gates',nWires,nEbits) = distribute gates partition hgraph
@@ -254,9 +250,9 @@ buildCircuit partition hgraph oldCirc = (unencapsulate_generic newCirc, nWires, 
 distribute :: [Gate] -> Partition -> Hypergraph -> ([Gate],Int,Int)
 distribute gates partition hypergraph = (allocateEbits components gatesWithCNOTs eDic 0, nWires, nEbits)
   where 
-    gatesWithCNOTs = distributeCNOTs cnots gates partition eDic 0
-    cnots = nonLocalCNOTs gates partition hypergraph
-    components = ebitInfo partition hypergraph
+    gatesWithCNOTs = distributeCNOTs nonlocal gates partition eDic 0
+    nonlocal = nonLocalCNOTs partition hypergraph
+    components = ebitInfo partition nonlocal
     nEbits = length components `div` 2
     (nWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
     addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- We add to the dictionary only if wires can not be reused
@@ -281,22 +277,21 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     bell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
-ebitInfo :: Partition -> Hypergraph -> [EbitComponent]
-ebitInfo partition hypergraph = sort $ disentanglers ++ entanglers
+ebitInfo :: Partition -> [NonLocalCNOT] -> [EbitComponent]
+ebitInfo partition nonlocal = sort $ disentanglers ++ entanglers
   where
     entanglers    = map (\(n,c,b,_,ht) -> Entangler    (c,b,ht) n) eInfo
     disentanglers = map (\(_,c,b,n,ht) -> Disentangler (c,b,ht) n) eInfo
-    eInfo    = (filter external . rmdups) $ map (\(i,c,(w,p),o,ht) -> (i,c,partition M.! w,o,ht)) flatInfo -- Note: remove internal edges and duplicates (i.e. CNOT edges that can be implemented by the same eBit)
-    flatInfo = (concat . concat) $ map (\(c,vss) -> map (\(i,vs,o,ht) -> map (\v -> (i,c,v,o,ht)) vs) vss) (M.toList hypergraph)
-    external (_,c,b,_,_) = partition M.! c /= b
+    eInfo = nub $ map (\(i,c,w,_,o,ht) -> (i,c,partition M.! w,o,ht)) nonlocal
 
-nonLocalCNOTs :: [Gate] -> Partition -> Hypergraph -> [(Wire,Wire,Int,HedgeType)]
-nonLocalCNOTs gs partition hyp = sortBy (\(_,_,pos1,_) (_,_,pos2,_) -> compare pos1 pos2) nonlocal
+nonLocalCNOTs :: Partition -> Hypergraph -> [NonLocalCNOT]
+nonLocalCNOTs partition hyp = sortBy (\(_,_,_,pos1,_,_) (_,_,_,pos2,_,_) -> compare pos1 pos2) nonlocal
   where
-    hedges = concat $ map (\(v,vss) -> map (\(_,ws,_,ht) -> (v,ws,ht)) vss) (M.toList hyp)
-    cnots  = concat $ map (\(v,ws,ht) -> map (\(w,p) -> (v,w,p,ht)) ws) hedges 
-    nonlocal = filter (\(src,snk,_,_) -> partition M.! src /= partition M.! snk) cnots
+    nonlocal = filter (\(_,src,snk,_,_,_) -> partition M.! src /= partition M.! snk) cnots
+    cnots    = foldr (\(i,v,ws,o,ht) cs -> map (\(w,p) -> (i,v,w,p,o,ht)) ws ++ cs) [] hedges
+    hedges   = M.foldrWithKey (\v vss hs -> map (\(i,ws,o,ht) -> (i,v,ws,o,ht)) vss ++ hs) [] hyp
 
+-- Notice that this number is always going to be less or equal than (length $ nonLocalCNOTs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CNOTs twice
 countNonLocal :: [Gate] -> Partition -> Int
 countNonLocal gates partition = nonLocal
   where
@@ -306,7 +301,7 @@ countNonLocal gates partition = nonLocal
         allocate []     = []
         allocate ((w1,w2):cs) = (partition M.! w1, partition M.! w2) : allocate cs
 
-distributeCNOTs :: [(Wire,Wire,Int,HedgeType)] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
+distributeCNOTs :: [NonLocalCNOT] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
 distributeCNOTs []     gs partition _    prev = gs
 distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs (g':tail gsTail) partition eDic pos
   where
@@ -317,7 +312,7 @@ distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs (g'
         then QGate "not" rev [target] [] [Signed ebit True] ncf
         else QGate "not" rev [ebit]   [] [Signed ctrl True] ncf
       _ -> error "DistribHPartError: Failure when distributing CNOTs"
-    (source, sink, pos, ht) = c 
+    (_, source, sink, pos, _, ht) = c 
     ebit = eDic M.! (source, partition M.! sink, ht) - 1
     
 -- ## Building the distributed circuit ## --
@@ -344,7 +339,7 @@ main = do
           gateCountInput = length theGates
           partList = map read (concat . map words . lines $ hypPart)
           partition = M.fromList $ zip [0..] partList
-          (newCircuit, nExtraWires, nEbits) = buildCircuit partition hypergraph extractedCirc
+          (newCircuit, nEbits) = buildCircuit partition hypergraph extractedCirc
           in do
             putStrLn $ ""
             print_generic Cfg.outputAs newCircuit shape
