@@ -4,7 +4,7 @@ import Distributer.Examples
 import Quipper.Printing
 
 -- Path to the directory containing the hypergraph partitioning program
-partDir = "../../../../"
+partDir = "./"
 
 -- Partitioning parameters
 algorithm = Patoh
@@ -21,7 +21,7 @@ pullLimit :: Int
 pullLimit = 5 -- Set to -1 for infinite (i.e. no limit)
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = qft 200
+circuit = qft 75
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 

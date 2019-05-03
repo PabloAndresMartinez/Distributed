@@ -11,7 +11,7 @@ import Libraries.RandomSource
 import QuipperLib.Unboxing
 
 import qualified Data.Map as M
-import Data.List (sort, sortBy, (!!))
+import Data.List (sort, sortBy)
 import qualified HSH as HSH
 import Distributer.Examples
 import qualified Distributer.Configuration as Cfg
@@ -47,6 +47,14 @@ targetOf gate = case gate of
   _                                    -> error standardError
   where standardError = "DistribHPartError: Gate "++show gate++" was not properly prepocessed."
 
+isCNOT :: Gate -> Bool
+isCNOT (QGate "not" _ _ _ _ _) = True
+isCNOT _ = False
+
+getWires :: Gate -> (Wire,Wire)
+getWires (QGate "not" _ [target] [] [signedCtrl] _) = (ctrl,target)
+  where ctrl = from_signed signedCtrl
+
 cliffordT :: GateBase
 cliffordT = Standard (3*digits) (RandomSource $ mkStdGen 1234)
 
@@ -67,14 +75,14 @@ swapRemover g = identity_transformer g
 prepareCircuit :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> Mode -> (qin -> Circ qout)
 prepareCircuit circ shape (f_pull,_) = circ4
   where
-    circ1   = transform_generic swapRemover (unbox_recursive $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines *PROVISIONAL* 
-    circ2  = \inp -> without_comments $ circ1 inp -- Ignore comments
+    circ1 = transform_generic swapRemover (unbox_recursive $ decompose_generic TrimControls (decompose_generic cliffordT circ)) -- Decompose to Clifford+T and inline all subroutines
+    circ2 = \inp -> without_comments $ circ1 inp -- Ignore comments
     circ3 = separateClassicalControl circ2
     circ4 = if f_pull then pullCNOTs circ3 shape else circ3
 
 -- Used to prevent the creation of hyperedges when the CNOT is only classically controlled
 --   Separates X/not controlled gates into either X classically controlled or not quantumly controlled
---   The task of ignoring classical control is done by the 'buildHyp' taking this into account
+--   The task of ignoring classical control is done by 'buildHyp' ignoring controlled X gates
 separateClassicalControl :: (QCData qin, QCData qout) => (qin -> Circ qout) -> (qin -> Circ qout)
 separateClassicalControl circ = transform_generic separator circ
   where
@@ -150,7 +158,7 @@ pullCNOTsRec (g:gs) lpast = case g of
 
 
 -- ## Building the hypergraph ## --
--- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m,b) is a hypedge:
+-- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m,b) is a hyperedge:
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CNOT, 
 --   (n,m) is the interval of indexes in [Gate] where it is located,
 --   b==Control indicates the key is control (· dot), otherwise the key is target (+ dot)
@@ -213,7 +221,7 @@ hypToString alg hyp n = (fileData, nHedges, nVertices)
 
 -- ## Building the distributed circuit ## --
 type Block = Int
-type Partition = [Block] -- (partition, eDic)- The wire 'w' is in the block given by: b := (partition !! w). 
+type Partition = M.Map Wire Block -- The wire 'w' is in the block given by: (partition M.! w). 
 type EDic = M.Map (Wire,Block,HedgeType) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
 data EbitComponent = Entangler (Wire,Block,HedgeType) Int | Disentangler (Wire,Block,HedgeType) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
 
@@ -263,7 +271,7 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     ((source,bsink,htype), n, b) = (getConnections c, pos c, isEntangler c)
     sourceE = eDic M.! (source, bsink, htype) -- eBit wire for hyperedge 'source' (i.e. control if control type, target otherwise)
     sinkE = sourceE-1
-    component = if htype==Control 
+    component = if htype==Control -- creates the circuit that implements the component c
       then if b 
         then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
         else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, CDiscard sinkE]
@@ -278,30 +286,39 @@ ebitInfo partition hypergraph = sort $ disentanglers ++ entanglers
   where
     entanglers    = map (\(n,c,b,_,ht) -> Entangler    (c,b,ht) n) eInfo
     disentanglers = map (\(_,c,b,n,ht) -> Disentangler (c,b,ht) n) eInfo
-    eInfo    = (filter external . rmdups) $ map (\(i,c,(w,p),o,ht) -> (i,c,partition !! w,o,ht)) flatInfo -- Note: remove internal edges and duplicates (i.e. CNOT edges that can be implemented by the same eBit)
+    eInfo    = (filter external . rmdups) $ map (\(i,c,(w,p),o,ht) -> (i,c,partition M.! w,o,ht)) flatInfo -- Note: remove internal edges and duplicates (i.e. CNOT edges that can be implemented by the same eBit)
     flatInfo = (concat . concat) $ map (\(c,vss) -> map (\(i,vs,o,ht) -> map (\v -> (i,c,v,o,ht)) vs) vss) (M.toList hypergraph)
-    external (_,c,b,_,_) = partition !! c /= b
+    external (_,c,b,_,_) = partition M.! c /= b
 
 nonLocalCNOTs :: [Gate] -> Partition -> Hypergraph -> [(Wire,Wire,Int,HedgeType)]
 nonLocalCNOTs gs partition hyp = sortBy (\(_,_,pos1,_) (_,_,pos2,_) -> compare pos1 pos2) nonlocal
   where
     hedges = concat $ map (\(v,vss) -> map (\(_,ws,_,ht) -> (v,ws,ht)) vss) (M.toList hyp)
     cnots  = concat $ map (\(v,ws,ht) -> map (\(w,p) -> (v,w,p,ht)) ws) hedges 
-    nonlocal = filter (\(src,snk,_,_) -> partition !! src /= partition !! snk) cnots
+    nonlocal = filter (\(src,snk,_,_) -> partition M.! src /= partition M.! snk) cnots
+
+countNonLocal :: [Gate] -> Partition -> Int
+countNonLocal gates partition = nonLocal
+  where
+    cnots = map getWires $ filter isCNOT gates :: [(Wire,Wire)]
+    nonLocal = length $ filter (\(p1,p2) -> p1/=p2) $ allocate cnots
+      where
+        allocate []     = []
+        allocate ((w1,w2):cs) = (partition M.! w1, partition M.! w2) : allocate cs
 
 distributeCNOTs :: [(Wire,Wire,Int,HedgeType)] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
 distributeCNOTs []     gs partition _    prev = gs
-distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs gsTail partition eDic pos
+distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs (g':tail gsTail) partition eDic pos
   where
-    gsInit = take (pos-prev) gs
-    gsTail = g' : drop (pos-prev+1) gs
-    g' = case gs !! (pos-prev) of
+    gsInit  = take (pos-prev) gs
+    gsTail  = drop (pos-prev) gs
+    g' = case head gsTail of
       (QGate "not" rev [target] [] [Signed ctrl True] ncf) -> if ht==Control 
         then QGate "not" rev [target] [] [Signed ebit True] ncf
         else QGate "not" rev [ebit]   [] [Signed ctrl True] ncf
       _ -> error "DistribHPartError: Failure when distributing CNOTs"
     (source, sink, pos, ht) = c 
-    ebit = eDic M.! (source, partition !! sink, ht) - 1
+    ebit = eDic M.! (source, partition M.! sink, ht) - 1
     
 -- ## Building the distributed circuit ## --
 main = do
@@ -325,19 +342,17 @@ main = do
         hypPart <- readFile "partition.hgr"
         let 
           gateCountInput = length theGates
-          partition = map read (concat . map words . lines $ hypPart)
+          partList = map read (concat . map words . lines $ hypPart)
+          partition = M.fromList $ zip [0..] partList
           (newCircuit, nExtraWires, nEbits) = buildCircuit partition hypergraph extractedCirc
           in do
-            --print_generic Preview input shape
-            --print_generic Preview (prepareCircuit input shape (False,False,False)) shape
-            --print_generic Preview circ shape
-            --print_generic Preview newCircuit shape
             putStrLn $ ""
-            putStrLn $ "Gate count:"
             print_generic Cfg.outputAs newCircuit shape
             putStrLn $ "Original gate count: " ++ show gateCountInput
             putStrLn $ "Original qubit count: " ++ show nWires
-            putStrLn $ "Partition: " ++ show (take nWires partition)
+            putStrLn $ "Partition: " ++ show (take nWires $ map snd $ M.toList partition)
+            putStrLn $ ""
+            putStrLn $ "Number of non-local CNOTs: " ++ (show $ countNonLocal theGates partition)
             putStrLn $ "Total number of ebits: " ++ show nEbits
             putStrLn $ ""
             putStrLn $ "Number of vertices: " ++ show hypVertices
