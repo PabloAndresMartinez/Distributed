@@ -1,6 +1,0 @@
-#!/bin/bash
-
-program=bfWalk
-k=k10
-mode=10
-./getNonLocal tests/$program/$k/$mode/
