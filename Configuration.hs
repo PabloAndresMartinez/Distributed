@@ -9,8 +9,13 @@ partDir = "./"
 -- Partitioning parameters
 algorithm = Patoh
 subalgorithm = sea18
-k = "2"
-epsilon = "0.03"
+k = 2
+epsilon = 0.03
+
+-- Segmentation parameters
+segmentWindow = 100
+testWindow = segmentWindow `div` 5
+tolerance = 0.3
 
 -- Set True to activate each extension, False to deactivate it
 pullCNOTs = True

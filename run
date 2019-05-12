@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ./compile
-(/usr/bin/time -f "CPU Time: %es" ./Distributer) # > stdout 2>&1
+(/usr/bin/time -f "CPU Time: %es" ./Main) # > stdout 2>&1
