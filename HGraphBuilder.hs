@@ -10,10 +10,10 @@ import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 
 buildHyp :: [Gate] -> Int -> Mode -> Hypergraph
-buildHyp gs n (_, f_both) = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
+buildHyp gs nWires (_, f_both) = M.map (filter (\(_,ws,_,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
   where
     hyp = if f_both then toPositive (bothHyp gs 0 0) else vanillaHyp gs 0 -- Build the hypergraph by exploring the gates recursively
-    toPositive = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (n-w-1,p)) ws,o,ht)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
+    toPositive = M.map (map (\(i,ws,o,ht) -> (i,map (\(w,p) -> (nWires-w-1,p)) ws,o,ht)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
 
 vanillaHyp :: [Gate] -> Int -> Hypergraph
 vanillaHyp []     _ = M.empty
@@ -56,7 +56,7 @@ hypToString :: Cfg.PartAlg -> Hypergraph -> Int -> (String, Int, Int)
 hypToString alg hyp n = (fileData, nHedges, nVertices)
   where    
     flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss ++ hs) [] hyp
-    fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map nub flatData) ++ verticesWeights
+    fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map nub flatData) ++ verticesWeights -- map nub flatData is removing repeated vertices within a hedge
     fstLine Cfg.Kahypar = [nHedges, nVertices, 10]
     fstLine Cfg.Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
     verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]

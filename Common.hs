@@ -10,8 +10,9 @@ type Mode = (Bool,Bool) -- (PullCNOTs,BothRemotes)
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CNOT, 
 --   (n,m) is the interval of indexes in [Gate] where it is located,
 --   b==Control indicates the key is control (· dot), otherwise the key is target (+ dot)
-type Hypergraph = M.Map Wire [(Int,[(Wire,Int)],Int,HedgeType)]
+type Hedge = (Int,[(Wire,Int)],Int,HedgeType)
 data HedgeType = Control | Target | Unknown deriving (Eq, Ord, Show)
+type Hypergraph = M.Map Wire [Hedge]
 type Block = Int
 type Partition = M.Map Wire Block -- The wire 'w' is in the block given by: (partition M.! w). 
 
@@ -46,11 +47,12 @@ getWires (QGate "not" _ [target] [] [signedCtrl] _) = (ctrl,target)
   where ctrl = from_signed signedCtrl
 
 -- Notice that this number is always going to be less or equal than (length $ nonLocalCNOTs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CNOTs twice
-countNonLocal :: [Gate] -> Partition -> Int
-countNonLocal gates partition = nonLocal
+countNonLocal :: [Gate] -> [(Partition,Int)] -> Int
+countNonLocal gates []              = 0
+countNonLocal gates ((part,pos):ps) = nonLocal + countNonLocal nextGates ps
   where
-    cnots = map getWires $ filter isCNOT gates :: [(Wire,Wire)]
+    (thisGates,nextGates) = splitAt pos gates
+    cnots = map getWires $ filter isCNOT thisGates
     nonLocal = length $ filter (\(p1,p2) -> p1/=p2) $ allocate cnots
-      where
-        allocate []     = []
-        allocate ((w1,w2):cs) = (partition M.! w1, partition M.! w2) : allocate cs
+    allocate []     = []
+    allocate ((w1,w2):cs) = (part M.! w1, part M.! w2) : allocate cs

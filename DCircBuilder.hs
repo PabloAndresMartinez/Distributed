@@ -32,22 +32,37 @@ getConnections :: EbitComponent -> (Wire,Block,HedgeType)
 getConnections (Entangler    ws _) = ws
 getConnections (Disentangler ws _) = ws
 
-buildCircuit :: (QCData qin, QCData qout) => Partition -> Hypergraph -> (qin, BCircuit, qout) -> (qin -> Circ qout, Int)
-buildCircuit partition hgraph oldCirc = (unencapsulate_generic newCirc, nEbits)
+wasBound :: Wire -> [Gate] -> Bool
+wasBound w nextGates = case nextUsed of
+    []           -> False -- Not used anymore, so it has already been discarded.
+    (ins,outs):_ -> (w,Qbit) `elem` ins -- If it is used, the first time it appears it should be an input, otherwise it's being initalized.
   where
-    (inp,((ar1,gates,ar2,n),namespace),out) = oldCirc
-    (gates',nWires,nEbits) = distribute gates partition hgraph
-    newCirc = (inp,((ar1,gates',ar2,n+nWires),namespace),out)
+    nextUsed = filter (\(ins,outs) -> (w,Qbit) `elem` ins || (w,Qbit) `elem` outs) $ map gate_arity nextGates
 
-distribute :: [Gate] -> Partition -> Hypergraph -> ([Gate],Int,Int)
-distribute gates partition hypergraph = (allocateEbits components gatesWithCNOTs eDic 0, nWires, nEbits)
+-- ## Circuit bulding routine ## --
+
+buildCircuit :: [Gate] -> Int -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int)
+buildCircuit oldCirc nWires segments = case segments of
+    _:[] -> (distGates, thisWires, thisEbits) 
+    _:_  -> (distGates ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + length teleGates + nextEbits)
+  where
+    (nextGates, nextWires, nextEbits) = buildCircuit remainingCirc nWires (tail segments)
+    (distGates, thisWires, thisEbits) = distribute thisGates thisHyp thisPart 
+    (thisGates, remainingCirc) = splitAt thisPos oldCirc
+    (thisHyp, thisPart, thisPos) = head segments
+    (_,       nextPart, _      ) = head $ tail segments
+    teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> wasBound w remainingCirc && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CNOT-vertices!
+    teleAt w = QGate "teleport" False [w] [] [] False
+
+distribute :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)
+distribute gates hypergraph partition = (allocateEbits components gatesWithCNOTs eDic 0, nWires, nEbits)
   where 
     gatesWithCNOTs = distributeCNOTs nonlocal gates partition eDic 0
     nonlocal = nonLocalCNOTs partition hypergraph
     components = ebitInfo partition nonlocal
     nEbits = length components `div` 2
     (nWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
-    addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- We add to the dictionary only if wires can not be reused
+    addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b,ht) we allocate a new pair of negative wires
 
 -- Note: The order how the components are added is essential. It must be from the end to the beginning.
 allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> Int -> [Gate]
@@ -74,7 +89,7 @@ ebitInfo partition nonlocal = sort $ disentanglers ++ entanglers
   where
     entanglers    = map (\(n,c,b,_,ht) -> Entangler    (c,b,ht) n) eInfo
     disentanglers = map (\(_,c,b,n,ht) -> Disentangler (c,b,ht) n) eInfo
-    eInfo = nub $ map (\(i,c,w,_,o,ht) -> (i,c,partition M.! w,o,ht)) nonlocal
+    eInfo = nub $ map (\(i,c,w,_,o,ht) -> (i,c,partition M.! w,o,ht)) nonlocal -- This nub makes sure there's only one element per cut between gate positions [i,o]
 
 nonLocalCNOTs :: Partition -> Hypergraph -> [NonLocalCNOT]
 nonLocalCNOTs partition hyp = sortBy (\(_,_,_,pos1,_,_) (_,_,_,pos2,_,_) -> compare pos1 pos2) nonlocal
@@ -93,7 +108,6 @@ distributeCNOTs (c:cs) gs partition eDic prev = gsInit ++ distributeCNOTs cs (g'
       (QGate "not" rev [target] [] [Signed ctrl True] ncf) -> if ht==Control 
         then QGate "not" rev [target] [] [Signed ebit True] ncf
         else QGate "not" rev [ebit]   [] [Signed ctrl True] ncf
-      _ -> error "DistribHPartError: Failure when distributing CNOTs"
+      _ -> error "Failure when distributing CNOTs"
     (_, source, sink, pos, _, ht) = c 
     ebit = eDic M.! (source, partition M.! sink, ht) - 1
-    
