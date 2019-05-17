@@ -1,7 +1,7 @@
 import qualified Data.Map as M
 import Data.List (sort, sortBy, nub)
 import Numeric (showFFloat)
-import qualified HSH as HSH
+import System.Directory
 
 import Quipper
 import Quipper.Circuit
@@ -15,10 +15,15 @@ import Distributer.HGraphBuilder
 import Distributer.DCircBuilder
 import Distributer.Examples
 
+prepareTempDirectory :: IO ()
+prepareTempDirectory = do 
+  dirExists <- doesDirectoryExist "temp"
+  if dirExists then removeDirectoryRecursive "temp" else return ()
+  createDirectory "temp"
 
 main = do
   (input,shape, name) <- Cfg.circuit
-  HSH.run $ "touch temp/dummy; rm temp/*" :: IO () 
+  prepareTempDirectory
   let
     k = show Cfg.k; epsilon = showFFloat (Just 2) Cfg.epsilon ""; mode = (Cfg.pullCNOTs, Cfg.bothRemotes)
     circ  = prepareCircuit input shape mode
