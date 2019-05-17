@@ -27,7 +27,7 @@ pullLimit :: Int
 pullLimit = -1 -- Set to -1 for infinite (i.e. no limit)
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = qft 20
+circuit = qft 200
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 {- List of available values for circuit:

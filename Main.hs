@@ -1,4 +1,5 @@
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 import Data.List (sort, sortBy, nub)
 import Numeric (showFFloat)
 import System.Directory
@@ -31,7 +32,7 @@ main = do
     segments = partitioner theGates nWires mode
     gateCountInput = length theGates
     cnotsInput = length $ filter isCNOT theGates
-    (newGates, newWires, nEbits) = buildCircuit theGates nWires segments
+    (newGates, newWires, nEbits) = buildCircuit theGates nWires (IM.size ain) segments
     newCircuit = unencapsulate_generic (qin, ((ain,newGates,aout,nWires+newWires),namespace), qout)
     in do
       putStrLn $ ""

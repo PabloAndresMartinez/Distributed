@@ -12,6 +12,7 @@ import Distributer.Common
 type NonLocalCNOT = (Int,Wire,Wire,Int,Int,HedgeType) -- (i,v,w,p,o,ht); i (o) initial (final) pos of hedge it belongs to, v (w) a wire of the CNOT, p its position, ht its type
 type EDic = M.Map (Wire,Block,HedgeType) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
 data EbitComponent = Entangler (Wire,Block,HedgeType) Int | Disentangler (Wire,Block,HedgeType) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
+type BindingFlags = M.Map Wire Bool
 
 instance Ord EbitComponent where
   compare c1 c2 = case compare (pos c1) (pos c2) of
@@ -32,26 +33,34 @@ getConnections :: EbitComponent -> (Wire,Block,HedgeType)
 getConnections (Entangler    ws _) = ws
 getConnections (Disentangler ws _) = ws
 
-wasBound :: Wire -> [Gate] -> Bool
-wasBound w nextGates = case nextUsed of
-    []           -> False -- Not used anymore, so it has already been discarded.
-    (ins,outs):_ -> (w,Qbit) `elem` ins -- If it is used, the first time it appears it should be an input, otherwise it's being initalized.
+updBindings :: [Gate] -> BindingFlags -> BindingFlags
+updBindings []     bindings = bindings
+updBindings (g:gs) bindings = updBindings gs bindings''
   where
-    nextUsed = filter (\(ins,outs) -> (w,Qbit) `elem` ins || (w,Qbit) `elem` outs) $ map gate_arity nextGates
+    bindings'' = foldr (\w bs -> M.insert w True bs)  bindings' $ filterQbit outs
+    bindings'  = foldr (\w bs -> M.insert w False bs) bindings  $ filterQbit ins
+    (ins,outs) = gate_arity g
+    filterQbit arity = map fst $ filter (\(w,t) -> case t of Qbit -> True; _ -> False) arity
 
 -- ## Circuit bulding routine ## --
 
-buildCircuit :: [Gate] -> Int -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int)
-buildCircuit oldCirc nWires segments = case segments of
+buildCircuit :: [Gate] -> Int -> Int -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int)
+buildCircuit oldCirc nWires boundWires segments = buildCircuit' oldCirc nWires  initialBindings segments
+  where
+    initialBindings = M.fromList $ [(w,True) | w <- [0..boundWires-1]] ++ [(w,False) | w <- [boundWires..nWires-1]]
+
+buildCircuit' :: [Gate] -> Int -> BindingFlags -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int)
+buildCircuit' oldCirc nWires bindings segments = case segments of
     _:[] -> (distGates, thisWires, thisEbits) 
     _:_  -> (distGates ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + length teleGates + nextEbits)
   where
-    (nextGates, nextWires, nextEbits) = buildCircuit remainingCirc nWires (tail segments)
+    (nextGates, nextWires, nextEbits) = buildCircuit' remainingCirc nWires bindings' (tail segments) 
     (distGates, thisWires, thisEbits) = distribute thisGates thisHyp thisPart 
     (thisGates, remainingCirc) = splitAt thisPos oldCirc
     (thisHyp, thisPart, thisPos) = head segments
     (_,       nextPart, _      ) = head $ tail segments
-    teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> wasBound w remainingCirc && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CNOT-vertices!
+    bindings' = updBindings thisGates bindings
+    teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> bindings' M.! w && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CNOT-vertices!
     teleAt w = QGate "teleport" False [w] [] [] False
 
 distribute :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)
