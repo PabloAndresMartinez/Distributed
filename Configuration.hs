@@ -19,15 +19,10 @@ step = 1 + testWindow `div` 5
 tolerance = 0.5 :: Rational
 
 -- Set True to activate each extension, False to deactivate it
-pullCNOTs = True
-bothRemotes = True
-
--- A limit to avoid going out of memory in circuits with a lot of consecutive 1-qubit gates (usually product of approximating a non-Clifford gate)
-pullLimit :: Int 
-pullLimit = -1 -- Set to -1 for infinite (i.e. no limit)
+keepToffoli = False
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = qft 200
+circuit = qft 20
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 {- List of available values for circuit:

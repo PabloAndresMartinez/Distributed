@@ -13,10 +13,10 @@ import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 import Distributer.HGraphBuilder
 
--- Input is circuit, number of wires and the algorithm mode
+-- Input is circuit, number of wires
 -- Output is the list of partitions, indicating the position at which they end and the 'sub'-hypergraph they correspond to.
-partitioner :: [Gate] -> Int -> Mode -> [(Hypergraph, Partition, Int)]
-partitioner circ nWires mode = matchSegments $ findPartitions circ nWires mode 0
+partitioner :: [Gate] -> Int -> [(Hypergraph, Partition, Int)]
+partitioner circ nWires = matchSegments $ findPartitions circ nWires 0
   where
     matchSegments (s:[]) = [s]
     matchSegments (s:ss) = s : matchSegments ss'
@@ -27,37 +27,37 @@ partitioner circ nWires mode = matchSegments $ findPartitions circ nWires mode 0
         (_,prevPart,_) = s
         (h,nextPart,p) = head ss
 
-findPartitions :: [Gate] -> Int -> Mode -> Int -> [(Hypergraph, Partition, Int)]
-findPartitions []   _      _    _       = []
-findPartitions circ nWires mode counter = (theHyp,thePart,posR) : findPartitions circR nWires mode (counter+1)
+findPartitions :: [Gate] -> Int -> Int -> [(Hypergraph, Partition, Int)]
+findPartitions []   _      _       = []
+findPartitions circ nWires counter = (theHyp,thePart,posR) : findPartitions circR nWires (counter+1)
   where
     (theGates, circR) = splitAt posR circ
-    theHyp = buildHyp theGates nWires mode
+    theHyp = buildHyp theGates nWires
     thePart = getPartition theHyp nWires (show $ counter+1)
-    posR = extendSegment testGates wPart rho circ'' nWires mode
+    posR = extendSegment testGates wPart rho circ'' nWires
     (wGates, circ') = splitAt Cfg.segmentWindow circ
-    wHyp = buildHyp wGates nWires mode
+    wHyp = buildHyp wGates nWires
     wPart = getPartition wHyp nWires (show counter++".5")
     rho = getRho wHyp wPart
     (testGates, circ'') = splitAt Cfg.testWindow circ'
 
-extendSegment :: [Gate] -> Partition -> Rational -> [Gate] -> Int -> Mode -> Int
-extendSegment []    _    _   _    _      _    = Cfg.segmentWindow + Cfg.testWindow
-extendSegment gates part rho circ nWires mode = if (1+Cfg.tolerance)*rho < rho' 
+extendSegment :: [Gate] -> Partition -> Rational -> [Gate] -> Int -> Int
+extendSegment []    _    _   _    _      = Cfg.segmentWindow + Cfg.testWindow
+extendSegment gates part rho circ nWires = if (1+Cfg.tolerance)*rho < rho' 
     then Cfg.segmentWindow + Cfg.testWindow
-    else Cfg.step + extendSegment gates'' part rho circ' nWires mode
+    else Cfg.step + extendSegment gates'' part rho circ' nWires
   where
-    hyp = buildHyp gates nWires mode
+    hyp = buildHyp gates nWires
     rho' = getRho hyp part
     (gates', circ') = splitAt Cfg.step circ
     gates'' = drop Cfg.step $ gates ++ gates'
 
 getRho :: Hypergraph -> Partition -> Rational
-getRho hyp part = toRational nCuts / toRational nHedges
+getRho hyp part = if nHedges == 0 then 0 else toRational nCuts / toRational nHedges
   where
     nHedges = M.foldr (\hs n -> length hs + n) 0 hyp
     nCuts = M.foldr (\c n -> c+n) 0 $ M.mapWithKey countCuts hyp
-    countCuts w hs = sum $ map (\(_,ws,_,_) -> (length $ nub $ map (part M.!) $ w : map fst ws) - 1) hs
+    countCuts w hs = sum $ map (\(_,ws,_) -> (length $ nub $ map (part M.!) $ w : map fst ws) - 1) hs
 
 getPartition :: Hypergraph -> Int -> String -> Partition
 getPartition hypergraph nWires id = if head fileData == '0' 

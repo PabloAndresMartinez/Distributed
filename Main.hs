@@ -26,13 +26,13 @@ main = do
   (input,shape, name) <- Cfg.circuit
   prepareTempDirectory
   let
-    k = show Cfg.k; epsilon = showFFloat (Just 2) Cfg.epsilon ""; mode = (Cfg.pullCNOTs, Cfg.bothRemotes)
-    circ  = prepareCircuit input shape mode
+    k = show Cfg.k; epsilon = showFFloat (Just 2) Cfg.epsilon ""
+    circ  = prepareCircuit input shape
     (qin, ((ain,theGates,aout,nWires),namespace), qout) = encapsulate_generic id circ shape
-    segments = partitioner theGates nWires mode
+    segments = partitioner theGates nWires
     gateCountInput = length theGates
-    cnotsInput = length $ filter isCNOT theGates
-    (newGates, newWires, nEbits) = buildCircuit theGates nWires (IM.size ain) segments
+    czsInput = length $ filter isCZ theGates
+    (newGates, newWires, nEbits, nTeleports) = buildCircuit theGates nWires (IM.size ain) segments
     newCircuit = unencapsulate_generic (qin, ((ain,newGates,aout,nWires+newWires),namespace), qout)
     in do
       putStrLn $ ""
@@ -46,13 +46,15 @@ main = do
       print_generic Cfg.outputAs newCircuit shape
       putStrLn $ ""
       putStrLn $ "Original gate count: " ++ show gateCountInput
-      putStrLn $ "Original CNOT count: " ++ show cnotsInput
+      putStrLn $ "Original CZ count: " ++ show czsInput
       putStrLn $ "Original qubit count: " ++ show nWires
       putStrLn $ ""
-      putStrLn $ "Number of non-local CNOTs: " ++ (show $ countNonLocal theGates $ map (\(_,part,pos) -> (part,pos)) segments)
-      putStrLn $ "Total number of ebits: " ++ show nEbits
+      putStrLn $ "Number of nonlocal CZs: " ++ (show $ countNonLocal theGates $ map (\(_,part,pos) -> (part,pos)) segments)
+      putStrLn $ "Number of ebits due nonlocal CZs: " ++ show nEbits
+      putStrLn $ "Number of ebits due to teleportations: " ++ show nTeleports
+      putStrLn $ "Total number of ebits: " ++ show (nEbits+nTeleports)
       putStrLn $ ""
       putStrLn $ "Circuit: "++name
-      putStrLn $ "Extensions: " ++ (if fst mode then "PullCNOTs (limit: "++show Cfg.pullLimit++"), " else "") ++ (if snd mode then "BothRemotes, " else "")
+      putStrLn $ "Extensions: " ++ if Cfg.keepToffoli then "KeepToffoli" else "N/A"
       putStrLn $ "k = "++show k++"; epsilon = "++show epsilon 
       putStrLn $ "w = "++show Cfg.segmentWindow++"; t = "++show Cfg.testWindow++"; eta = "++show Cfg.tolerance

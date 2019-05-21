@@ -66,7 +66,7 @@ gse_C = let
   -- Integral data hpq and hpqrs:
   h1_file  = "h_1e_ascii"
   h2_file  = "h_2e_ascii"
-  datadir  = "../../../../gseData/"
+  datadir  = "gseData/"
   in do
     gse_data <- GSEData.load_gse_data m (datadir++h1_file) (datadir++h2_file)
     return $ (\_ -> GSE.gse b m occupied gse_data tau e_max nfun orthodox)
@@ -178,6 +178,13 @@ subroutineCirc_C (a,b,c,d,e,f) = do
   label (a,b,c,d,e,f) ("a","b","c","d","e","f") 
   return (a,b,c,d,e,f)
 
+just2Hs :: IO (Qubit -> Circ Qubit, Qubit, String)
+just2Hs = return (just2Hs_C, qubit, "just2Hs")
+just2Hs_C :: Qubit -> Circ Qubit
+just2Hs_C a = do
+  gate_H_at a
+  gate_H_at a
+  return a
 
 simple :: IO ((Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit), (Qubit,Qubit,Qubit,Qubit), String)
 simple = return (simple_C, (qubit,qubit,qubit,qubit), "simple")
@@ -196,6 +203,8 @@ simple2_C (a,b,c,d) = do
   qnot_at c `controlled` b
   qnot_at a `controlled` b
   qnot_at b `controlled` a
+  gate_H_at a
+  gate_H_at a
   qnot_at c `controlled` a
   qnot_at d `controlled` a
   return (a,b,c,d)
@@ -335,4 +344,17 @@ interesting4_C (a,b,c,d) = do
   qnot_at b `controlled` c
   gate_H_at d
   qnot_at b `controlled` d
+  return (a,b,c,d)
+
+withToffolis :: IO ((Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit), (Qubit,Qubit,Qubit,Qubit), String)
+withToffolis = return (withToffolis_C, (qubit,qubit,qubit,qubit), "withToffolis")
+withToffolis_C :: (Qubit, Qubit, Qubit, Qubit) -> Circ (Qubit, Qubit, Qubit, Qubit)
+withToffolis_C (a,b,c,d) = do
+  qnot_at a `controlled` c
+  qnot_at b `controlled` [c,d]
+  gate_H_at b
+  qnot_at c `controlled` d
+  qnot_at b `controlled` c
+  gate_H_at d
+  qnot_at b `controlled` [a,d]
   return (a,b,c,d)
