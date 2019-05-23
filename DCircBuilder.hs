@@ -85,7 +85,8 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     component = if isEntangler c
       then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
       else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, CDiscard sinkE]
-    bell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
+    bell = [QInit False sinkE False, QInit False sourceE False, QGate "bell" False [sinkE,sourceE] [] [] False]
+    -- explicitBell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
 ebitInfo :: Partition -> [NonLocalCZ] -> [EbitComponent]
