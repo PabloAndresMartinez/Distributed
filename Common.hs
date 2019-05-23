@@ -13,6 +13,21 @@ type Hedge = (Int,[(Wire,Int)],Int)
 type Hypergraph = M.Map Wire [Hedge]
 type Block = Int
 type Partition = M.Map Wire Block -- The wire 'w' is in the block given by: (partition M.! w). 
+type Matching   = M.Map Block Block
+
+-- The segment's gates, its hypergraph, its partition and the 'seam' cost that matches it with the next segment, the last element is the identifier
+type Segment = ([Gate], Hypergraph, Partition, Seam, (Int,Int))
+data Seam = Compute | Value Rational | Stop
+
+seamOf :: Segment -> Seam
+seamOf (_,_,_,seam,_) = seam
+
+isStop :: Seam -> Bool
+isStop Stop = True
+isStop _    = False
+
+updWith :: Matching -> Segment -> Segment
+updWith matching (gs,hyp,part,seam,id) = (gs, hyp, M.map (\b -> matching M.! b) part, seam, id)
 
 targetOf :: Gate -> Wire
 targetOf gate = case gate of
@@ -58,10 +73,10 @@ getWires (QGate "CZ" _ [target] [] [signedCtrl] _) = (ctrl,target)
   where ctrl = from_signed signedCtrl
 
 -- Notice that this number is always going to be less or equal than (length $ nonLocalCZs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CZs twice
-countNonLocal :: [Gate] -> [(Partition,Int)] -> Int
-countNonLocal gates []              = 0
-countNonLocal gates ((part,pos):ps) = nonLocal + countNonLocal nextGates ps
+countNonLocal :: [Segment] -> Int
+countNonLocal []     = 0
+countNonLocal (s:ss) = nonLocal + countNonLocal ss
   where
-    (thisGates,nextGates) = splitAt pos gates
+    nonLocal = length $ filter (\(w1,w2) -> thisPart M.! w1 /= thisPart M.! w2) czs
     czs = map getWires $ filter isCZ thisGates
-    nonLocal = length $ filter (\(w1,w2) -> part M.! w1 /= part M.! w2) czs
+    (thisGates,_,thisPart,_,_) = s

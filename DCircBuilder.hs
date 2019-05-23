@@ -44,21 +44,20 @@ updBindings (g:gs) bindings = updBindings gs bindings''
 
 -- ## Circuit bulding routine ## --
 
-buildCircuit :: [Gate] -> Int -> Int -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int,Int)
-buildCircuit oldCirc nWires boundWires segments = buildCircuitRec oldCirc nWires  initialBindings segments
+buildCircuit :: Int -> Int -> [Segment] -> ([Gate],Int,Int,Int)
+buildCircuit nWires boundWires segments = buildCircuitRec nWires initialBindings segments
   where
     initialBindings = M.fromList $ [(w,True) | w <- [0..boundWires-1]] ++ [(w,False) | w <- [boundWires..nWires-1]]
 
-buildCircuitRec :: [Gate] -> Int -> BindingFlags -> [(Hypergraph, Partition, Int)] -> ([Gate],Int,Int,Int)
-buildCircuitRec oldCirc nWires bindings segments = case segments of
+buildCircuitRec :: Int -> BindingFlags -> [Segment] -> ([Gate],Int,Int,Int)
+buildCircuitRec nWires bindings segments = case segments of
     _:[] -> (distGates, thisWires, thisEbits, 0) 
     _:_  -> (distGates ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + nextEbits, length teleGates + nextTPs)
   where
-    (nextGates, nextWires, nextEbits, nextTPs) = buildCircuitRec remainingCirc nWires bindings' (tail segments) 
-    (distGates, thisWires, thisEbits) = distribute thisGates thisHyp thisPart 
-    (thisGates, remainingCirc) = splitAt thisPos oldCirc
-    (thisHyp, thisPart, thisPos) = head segments
-    (_,       nextPart, _      ) = head $ tail segments
+    (nextGates, nextWires, nextEbits, nextTPs) = buildCircuitRec nWires bindings' (tail segments) 
+    (distGates, thisWires, thisEbits) = distribute thisGates thisHyp thisPart
+    (thisGates, thisHyp, thisPart,_,_) = head segments
+    (_,         _,       nextPart,_,_) = head $ tail segments
     bindings' = updBindings thisGates bindings
     teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> bindings' M.! w && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CZ-vertices!
     teleAt w = QGate "teleport" False [w] [] [] False

@@ -7,22 +7,20 @@ import Quipper.Printing
 partDir = "./"
 
 -- Partitioning parameters
-algorithm = Patoh
+algorithm = Kahypar
 subalgorithm = sea18
-k = 5
+k = 5 :: Int
 epsilon = 0.03
 
 -- Segmentation parameters
-segmentWindow = 1000 :: Int
-testWindow = segmentWindow `div` 5 
-step = 1 + testWindow `div` 5
-tolerance = 0.5 :: Rational
+initSegSize = 1000 :: Int
+maxHedgeDist = 500 :: Int
 
 -- Set True to activate each extension, False to deactivate it
 keepToffoli = False
 
 -- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = qft 20
+circuit = qft 200
 -- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
 outputAs = GateCount
 {- List of available values for circuit:

@@ -13,52 +13,115 @@ import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 import Distributer.HGraphBuilder
 
--- Input is circuit, number of wires
+-- Input is the circuit and the number of wires
 -- Output is the list of partitions, indicating the position at which they end and the 'sub'-hypergraph they correspond to.
-partitioner :: [Gate] -> Int -> [(Hypergraph, Partition, Int)]
-partitioner circ nWires = matchSegments $ findPartitions circ nWires 0
+partitioner :: [Gate] -> Int -> [Segment]
+partitioner circ nWires = mergeSeams nWires $ ignoreLastSeam $ initialSegments circ 0
   where
-    matchSegments (s:[]) = [s]
-    matchSegments (s:ss) = s : matchSegments ss'
-      where
-        ss' = (h, M.map (\b -> matching M.! b) nextPart, p) : (tail ss) -- Rename blocks of nextPart so they optimally match with those from prevPart
-        matching = reverseM $ matchPartitions prevPart nextPart nWires
-        reverseM = M.fromList . map (\(a,b) -> (b,a)) . M.toList -- Because matching sends elements of prevPart to nextPart; we need the opposite
-        (_,prevPart,_) = s
-        (h,nextPart,p) = head ss
+    initialSegments []    _ = []
+    initialSegments gates n = segmentOf thisGates n : initialSegments nextGates (n+1)
+      where 
+        segmentOf gs n = (\hyp -> (gs, hyp, getPartition hyp nWires (show n), Compute, (n,n) )) $ buildHyp gs nWires
+        (thisGates, nextGates) = splitAt (seamPos Cfg.initSegSize gates) gates
+        seamPos _ [] = 0
+        seamPos 0 gs =  length $ takeWhile (not . isCZ) gs
+        seamPos n gs = (length $ takeWhile (not . isCZ) gs) + 1 + seamPos (n-1) (drop 1 $ dropWhile (not . isCZ) gs)
 
-findPartitions :: [Gate] -> Int -> Int -> [(Hypergraph, Partition, Int)]
-findPartitions []   _      _       = []
-findPartitions circ nWires counter = (theHyp,thePart,posR) : findPartitions circR nWires (counter+1)
+mergeSeams :: Int -> [Segment] -> [Segment]
+mergeSeams nWires segments = if allStop then segments else mergeSeams nWires segments'
   where
-    (theGates, circR) = splitAt posR circ
-    theHyp = buildHyp theGates nWires
-    thePart = getPartition theHyp nWires (show $ counter+1)
-    posR = extendSegment testGates wPart rho circ'' nWires
-    (wGates, circ') = splitAt Cfg.segmentWindow circ
-    wHyp = buildHyp wGates nWires
-    wPart = getPartition wHyp nWires (show counter++".5")
-    rho = getRho wHyp wPart
-    (testGates, circ'') = splitAt Cfg.testWindow circ'
+    segments' = ignoreLastSeam $ mergeMin nWires $ computeNewSeams nWires $ matchSegments nWires idMatching segments
+    allStop = foldr (&&) True $ map (\(_,_,_,seam,_) -> isStop seam) segments
+    idMatching = M.fromList [(b,b) | b <- [0..Cfg.k-1]]
 
-extendSegment :: [Gate] -> Partition -> Rational -> [Gate] -> Int -> Int
-extendSegment []    _    _   _    _      = Cfg.segmentWindow + Cfg.testWindow
-extendSegment gates part rho circ nWires = if (1+Cfg.tolerance)*rho < rho' 
-    then Cfg.segmentWindow + Cfg.testWindow
-    else Cfg.step + extendSegment gates'' part rho circ' nWires
+-- The last segment has no next segment, so it has no seam.
+ignoreLastSeam :: [Segment] -> [Segment]
+ignoreLastSeam (s:[]) = (\(gs,hyp,part,_,id) -> [(gs,hyp,part,Stop,id)]) s 
+ignoreLastSeam (s:ss) = s : ignoreLastSeam ss
+
+matchSegments :: Int -> Matching -> [Segment] -> [Segment]
+matchSegments nWires prevMatching (s:[]) = updWith prevMatching s : []
+matchSegments nWires prevMatching (s:ss) = s' : matchSegments nWires matching ss 
   where
-    hyp = buildHyp gates nWires
-    rho' = getRho hyp part
-    (gates', circ') = splitAt Cfg.step circ
-    gates'' = drop Cfg.step $ gates ++ gates'
+    s' = updWith prevMatching s -- Rename blocks of this segment's partition so they optimally match with those from the previous segment
+    matching = case thisSeam of -- Only compute matchings when necessary (i.e. when this segment or the next one have changed)
+      Compute -> updatedMatching
+      _       -> case nextSeam of
+        Compute -> updatedMatching
+        _       -> prevMatching 
+    updatedMatching = matchPartitions nextPart thisPart nWires -- This gives a matching from blocks of nextPart to blocks of thisPart
+    (_,_,thisPart, thisSeam,_) = s' -- Note that it is important that the prevMatching has already been applied to the segment
+    (_,_,nextPart, nextSeam,_) = head ss
 
-getRho :: Hypergraph -> Partition -> Rational
-getRho hyp part = if nHedges == 0 then 0 else toRational nCuts / toRational nHedges
+computeNewSeams :: Int -> [Segment] -> [Segment]
+computeNewSeams nWires []     = []
+computeNewSeams nWires (s:ss) = (gs,hyp,part,seam',id) : computeNewSeams nWires ss
   where
-    nHedges = M.foldr (\hs n -> length hs + n) 0 hyp
-    nCuts = M.foldr (\c n -> c+n) 0 $ M.mapWithKey countCuts hyp
-    countCuts w hs = sum $ map (\(_,ws,_) -> (length $ nub $ map (part M.!) $ w : map fst ws) - 1) hs
+    (gs,hyp,part,seam,id) = s
+    seam' = case seam of
+      Compute -> Value $ getRho nWires s (head ss)
+      _       -> seam
 
+-- A rational number from 0 to 1. A low value indicates that the two partitions are simiar, so the segments should likely be merged.
+--    The value is calculated as a weighted sum of the wires that require teleportation, the weight depends on how busy each wire is.
+--    The minimum of the wireHedges/totalHedges ratio between hyp1 and hyp2 of each wire is taken, 
+--      because that is a good estimate of the added cost if the teleportation is not applied
+getRho :: Int -> Segment -> Segment -> Rational
+getRho nWires (_, hyp1, part1,_,_) (_, hyp2, part2,_,_) = sum $ map (\w -> min (weight w hyp1) (weight w hyp2)) $ filterStatic [0..nWires-1]
+  where
+    filterStatic = filter (\w -> part1 M.! w /= part2 M.! w)
+    weight wire hyp = toRational (hedges wire hyp) / toRational (totalHs hyp)
+    hedges wire hyp = if M.member wire hyp then length $ hyp M.! wire else 0
+    totalHs hyp = M.foldr (\hs n -> length hs + n) 0 hyp
+
+-- Finds minimums in the rho sequence and merges the two corresponding segments.
+--    It then checks if the created segment has a lower ebit count; if not it restores the original segments and marks the seam as Stop
+mergeMin :: Int -> [Segment] -> [Segment]
+mergeMin nWires []       = []
+mergeMin nWires segments = case seamOf $ head segments of
+    Stop    -> head segments : (mergeMin nWires $ tail segments)
+    Value _ -> valley' ++ mergeMin nWires segments'
+    _       -> error "Error when merging segments."
+  where
+    valley' = if countCuts leftSeg + countCuts rightSeg + countTeles partLeft partRight < countCuts mergedSeg 
+      then map (\(gs,hyp,part,_,id) -> (gs,hyp,part,Stop,id)) (beforeMin++afterMin)
+      else beforeMin ++ mergedSeg : (drop 2 afterMin) -- Remove from afterMin the two segments that have been merged
+    mergedSeg = (mergedGates, mergedHyp, mergedPart, Compute, (fst idLeft, snd idRight) )
+    mergedPart = getPartition mergedHyp nWires $ (show $ fst idLeft) ++ "_" ++ (show $ snd idRight)
+    mergedHyp = buildHyp mergedGates nWires
+    mergedGates = gsLeft++gsRight
+    leftSeg@ (gsLeft, _,partLeft, _,idLeft)  = head afterMin
+    rightSeg@(gsRight,_,partRight,_,idRight) = head $ tail afterMin -- Always exists, as there's always another segment after the minimum (i.e. the one it's seam refers to)
+    (beforeMin, afterMin, segments') = findValley segments
+    countTeles part1 part2 = length $ filter (\w -> part1 M.! w /= part2 M.! w) [0..nWires-1]
+
+-- Finds the next minimum seam and its surrounding segments up to a peak on the seam value or a stop.
+--    Outputs the segments up to the one with the minimum seam (excluding it), the ones after (including it) up to the end of the valley, and the rest.
+findValley :: [Segment] -> ([Segment],[Segment],[Segment])
+findValley segments = (beforeMin, afterMin, segments')
+  where
+    (beforeMin, afterMin) = splitAt minPos valley
+    (valley, segments') = splitAt (endPos+1) segments
+    (minPos, endPos) = findValleyRec segments 0 Nothing
+
+-- Receives the collection of remaining segments, the position of the head segment with respect to the original input list and the current minimum segment
+-- It outputs a pair (minPos, endPos) where minPos is the position of the segment with minimum seam and endPos is the end of the valley.
+--    The head of the list of segments must exist and its seam to be a Value type; this is verified by mergeMin which is the only function calling it.
+--    The second element must also exist, which is satisfied by the fact that the last segment has seam of type Stop by construction.
+findValleyRec :: [Segment] -> Int -> Maybe Int -> (Int,Int)
+findValleyRec (s:ss) pos Nothing = case seamOf $ head ss of   -- The minimum has not been found yet.
+    Value rho' -> if rho < rho' then findValleyRec ss (pos+1) (Just pos) else findValleyRec ss (pos+1) Nothing
+    Stop       -> (pos, pos+1)
+    _          -> error "Error when merging segments."
+  where (Value rho) = seamOf s
+findValleyRec (s:ss) pos (Just m) = case seamOf $ head ss of  -- The minimum is known, now find the end.
+    Value rho' -> if rho > rho' then (m,pos) else findValleyRec ss (pos+1) (Just m)
+    Stop       -> (m,pos+1)
+    _          -> error "Error when merging segments."
+  where (Value rho) = seamOf s
+
+
+-- Calls a third party software to solve the hypergraph partitioning problem
 getPartition :: Hypergraph -> Int -> String -> Partition
 getPartition hypergraph nWires id = if head fileData == '0' 
     then error $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
@@ -75,51 +138,53 @@ getPartitionIO fileData id = let
     hypFile  = "temp/hyp_"++id++".hgr"
     partFile = "temp/part_"++id++".hgr"
     script Cfg.Kahypar = Cfg.partDir++"KaHyPar -h "++hypFile++" -k "++k++" -e "++epsilon++" -m direct -o km1 -p "++Cfg.partDir++Cfg.subalgorithm++" -q true"
-    script Cfg.Patoh = Cfg.partDir++"PaToH "++hypFile++" "++k++" FI="++epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100"
+    script Cfg.Patoh = Cfg.partDir++"PaToH "++hypFile++" "++k++" FI="++epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
   in do 
     writeFile hypFile $ fileData 
     HSH.run $ script Cfg.algorithm :: IO () 
     HSH.run $ "mv "++hypFile++".part* "++partFile :: IO ()
+    putStrLn id
     readFile partFile
 
 -- ## Heuristic search to match partitions ## --
 
 -- A matching is a map from blocks of the previous partition to blocks of the next partition
-type Matching   = M.Map Block Block
 type Partition' = M.Map Block [Wire]
 type HCost      = M.Map Block Int
 
+-- This returns a matching map from blocks of 'part1' to blocks of 'part2' so their circuits can be joined with the minimum number of teleportations.
+--    For an output 'matching', 'part2' should be updated to 'M.map (\b -> matching M.! b) part2'
 matchPartitions :: Partition -> Partition -> Int -> Matching
-matchPartitions prevPart nextPart nWires = matchPartitionsRec blocksPrev nextPart' heuristic (M.keys blocksPrev) initial
+matchPartitions part1 part2 nWires = matchPartitionsRec blocks1 part2' heuristic (M.keys blocks1) initial
   where
     initial = [(M.empty, M.foldr (+) 0 heuristic)]
-    heuristic = heuristicCost blocksPrev nextPart'
-    prevPart' = M.take nWires prevPart -- Take only the wire vertices
-    nextPart' = M.take nWires nextPart -- Take only the wire vertices
-    blocksPrev = M.foldrWithKey (\w b m -> M.alter (appendIt w) b m) M.empty prevPart'
+    heuristic = heuristicCost blocks1 part2'
+    part1' = M.take nWires part1 -- Take only the wire vertices
+    part2' = M.take nWires part2 -- Take only the wire vertices
+    blocks1 = M.foldrWithKey (\w b m -> M.alter (appendIt w) b m) M.empty part1'
     appendIt w l = case l of 
       Nothing -> Just $ w:[]
       Just ws -> Just $ w:ws
 
 -- Thanks to lazyness, the recursive search is actually only applied on the best candidates
 matchPartitionsRec :: Partition' -> Partition -> HCost -> [Block] -> [(Matching,Int)] -> Matching
-matchPartitionsRec blocksPrev nextPart heuristic allBlocks matchings = if M.size (fst best) == length allBlocks -- If the matching with lowest cost is a full solution, stop
+matchPartitionsRec blocks1 part2 heuristic allBlocks matchings = if M.size (fst best) == length allBlocks -- If the matching with lowest cost is a full solution, stop
     then fst best
-    else matchPartitionsRec blocksPrev nextPart heuristic allBlocks (sortThem matchings') 
+    else matchPartitionsRec blocks1 part2 heuristic allBlocks (sortThem matchings') 
     -- Sorting is essential; it makes sure that choices whose heuristicCost+actualCost are lowest are searched first
   where
     best = head matchings 
     matchings' = extend best ++ tail matchings -- Only search for the currently best matching
     extend (matching, cost) = [ (M.insert thisBlock b matching, update cost b) 
-      | b <- allBlocks \\ M.foldr (:) [] matching ] -- allBlocks - already matched from 'nextPart'
-    update cost b = cost - heuristic M.! thisBlock + (length $ filter (/= b) $ map (nextPart M.!) thisWires) -- substitute estimate with real cost
-    (thisBlock, thisWires) = (head . M.toList) $ M.difference blocksPrev (fst best) -- Find a block from 'prevPart' not yet allocated
+      | b <- allBlocks \\ M.foldr (:) [] matching ] -- allBlocks - already matched from 'part2'
+    update cost b = cost - heuristic M.! thisBlock + (length $ filter (/= b) $ map (part2 M.!) thisWires) -- substitute estimate with real cost
+    (thisBlock, thisWires) = (head . M.toList) $ M.difference blocks1 (fst best) -- Find a block from 'part1' not yet allocated
     sortThem = sortBy (\(_,cost) (_,cost') -> compare cost cost')
 
--- Returns a list of the minimum amount of swaps required to match each block from 'prevPart' to its most similar counterpart in 'nextPart'
+-- Returns a list of the minimum amount of swaps required to match each block from 'part1' to its most similar counterpart in 'part2'
 heuristicCost :: Partition' -> Partition -> HCost
-heuristicCost blocksPrev nextPart = M.mapWithKey hCostFor blocksPrev
+heuristicCost blocks1 part2 = M.mapWithKey hCostFor blocks1
   where
-    hCostFor b ws = length ws - (minimum $ map length $ (group . sort) $ map (nextPart M.!) ws)
+    hCostFor b ws = length ws - (minimum $ map length $ (group . sort) $ map (part2 M.!) ws)
    
 

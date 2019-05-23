@@ -10,10 +10,15 @@ import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 
 buildHyp :: [Gate] -> Int -> Hypergraph
-buildHyp gs nWires = M.map (filter (\(_,ws,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
+buildHyp gs nWires = M.map splitLongHedges $ M.map (filter (\(_,ws,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
   where
     hyp = toPositive $ buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
     toPositive = M.map (map (\(i,ws,o) -> (i,map (\(w,p) -> (nWires-w-1,p)) ws,o)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
+    splitLongHedges []            = []
+    splitLongHedges ((i,ws,o):hs) = if Cfg.maxHedgeDist < o - i
+      then let x = i + (o - i) `div` 2 in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
+      else (i,ws,o) : splitLongHedges hs
+    before x (_,p) = p < x
 
 -- The hypergraph is built from the end of the circuit to its start
 buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
@@ -36,6 +41,12 @@ buildHypRec (g:gs) n czVertex = if isClassical g then buildHypRec gs (n+1) czVer
           Nothing -> Just [(nan,[],n)]
           Just ((_,ws,o):es) -> Just ((nan,[],n):(n+1,ws,o):es) -- Close the last hyperedge group and create a new empty one
         nan = 0
+
+countCuts :: Segment -> Int
+countCuts (_,hyp,part,_,_) = sum $ map (\n -> n-1) blocksPerHedge
+  where
+    blocksPerHedge = map (length . nub . map (part M.!)) flatData
+    flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_) -> v:(map (\(w,_) -> w) vs)) vss ++ hs) [] hyp
 
 hypToString :: Cfg.PartAlg -> Hypergraph -> Int -> (String, Int, Int)
 hypToString alg hyp n = (fileData, nHedges, nVertices)

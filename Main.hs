@@ -32,7 +32,7 @@ main = do
     segments = partitioner theGates nWires
     gateCountInput = length theGates
     czsInput = length $ filter isCZ theGates
-    (newGates, newWires, nEbits, nTeleports) = buildCircuit theGates nWires (IM.size ain) segments
+    (newGates, newWires, nEbits, nTeleports) = buildCircuit nWires (IM.size ain) segments
     newCircuit = unencapsulate_generic (qin, ((ain,newGates,aout,nWires+newWires),namespace), qout)
     in do
       putStrLn $ ""
@@ -49,7 +49,7 @@ main = do
       putStrLn $ "Original CZ count: " ++ show czsInput
       putStrLn $ "Original qubit count: " ++ show nWires
       putStrLn $ ""
-      putStrLn $ "Number of nonlocal CZs: " ++ (show $ countNonLocal theGates $ map (\(_,part,pos) -> (part,pos)) segments)
+      putStrLn $ "Number of nonlocal CZs: " ++ (show $ countNonLocal segments)
       putStrLn $ "Number of ebits due nonlocal CZs: " ++ show nEbits
       putStrLn $ "Number of ebits due to teleportations: " ++ show nTeleports
       putStrLn $ "Total number of ebits: " ++ show (nEbits+nTeleports)
@@ -57,4 +57,4 @@ main = do
       putStrLn $ "Circuit: "++name
       putStrLn $ "Extensions: " ++ if Cfg.keepToffoli then "KeepToffoli" else "N/A"
       putStrLn $ "k = "++show k++"; epsilon = "++show epsilon 
-      putStrLn $ "w = "++show Cfg.segmentWindow++"; t = "++show Cfg.testWindow++"; eta = "++show Cfg.tolerance
+      putStrLn $ "initSegSize = "++show Cfg.initSegSize++"; maxHedgeDist = "++show Cfg.maxHedgeDist
