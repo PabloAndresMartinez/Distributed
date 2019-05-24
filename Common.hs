@@ -5,6 +5,16 @@ import qualified Data.Map as M
 import Quipper
 import Quipper.Circuit
 
+-- Parameters
+type K = Int
+type Epsilon = Float
+type InitSegSize = Int
+type MaxHedgeDist = Int
+type KeepToffoli = Bool
+data PartAlg = Kahypar | Patoh
+type PartDir = String
+type OutputPreview = Bool
+
 -- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m,b) is a hyperedge:
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CZ, 
 --   (n,m) is the interval of indexes in [Gate] where it is located,

@@ -15,24 +15,26 @@ import Distributer.HGraphBuilder
 
 -- Input is the circuit and the number of wires
 -- Output is the list of partitions, indicating the position at which they end and the 'sub'-hypergraph they correspond to.
-partitioner :: [Gate] -> Int -> [Segment]
-partitioner circ nWires = mergeSeams nWires $ ignoreLastSeam $ initialSegments circ 0
-  where
+partitioner :: (K,Epsilon,InitSegSize,MaxHedgeDist,PartAlg,PartDir) -> Int -> [Gate] -> [Segment]
+partitioner (k,e,w,m,alg,dir) nWires circ = mergeSeams toHypergraph toPartition k nWires $ ignoreLastSeam $ initialSegments circ 0
+  where    
+    toHypergraph = buildHyp m nWires
+    toPartition = getPartition (k,e,alg,dir) nWires
     initialSegments []    _ = []
     initialSegments gates n = segmentOf thisGates n : initialSegments nextGates (n+1)
       where 
-        segmentOf gs n = (\hyp -> (gs, hyp, getPartition hyp nWires (show n), Compute, (n,n) )) $ buildHyp gs nWires
-        (thisGates, nextGates) = splitAt (seamPos Cfg.initSegSize gates) gates
+        segmentOf gs n = (\hyp -> (gs, hyp, toPartition hyp (show n), Compute, (n,n) )) $ toHypergraph gs
+        (thisGates, nextGates) = splitAt (seamPos w gates) gates
         seamPos _ [] = 0
         seamPos 0 gs =  length $ takeWhile (not . isCZ) gs
         seamPos n gs = (length $ takeWhile (not . isCZ) gs) + 1 + seamPos (n-1) (drop 1 $ dropWhile (not . isCZ) gs)
 
-mergeSeams :: Int -> [Segment] -> [Segment]
-mergeSeams nWires segments = if allStop then segments else mergeSeams nWires segments'
+mergeSeams :: ([Gate] -> Hypergraph) -> (Hypergraph -> String -> Partition) -> K -> Int -> [Segment] -> [Segment]
+mergeSeams toHypergraph toPartition k nWires segments = if allStop then segments else mergeSeams toHypergraph toPartition k nWires segments'
   where
-    segments' = ignoreLastSeam $ mergeMin nWires $ computeNewSeams nWires $ matchSegments nWires idMatching segments
+    segments' = ignoreLastSeam $ mergeMin toHypergraph toPartition nWires $ computeNewSeams nWires $ matchSegments nWires idMatching segments
     allStop = foldr (&&) True $ map (\(_,_,_,seam,_) -> isStop seam) segments
-    idMatching = M.fromList [(b,b) | b <- [0..Cfg.k-1]]
+    idMatching = M.fromList [(b,b) | b <- [0..k-1]]
 
 -- The last segment has no next segment, so it has no seam.
 ignoreLastSeam :: [Segment] -> [Segment]
@@ -76,19 +78,19 @@ getRho nWires (_, hyp1, part1,_,_) (_, hyp2, part2,_,_) = sum $ map (\w -> min (
 
 -- Finds minimums in the rho sequence and merges the two corresponding segments.
 --    It then checks if the created segment has a lower ebit count; if not it restores the original segments and marks the seam as Stop
-mergeMin :: Int -> [Segment] -> [Segment]
-mergeMin nWires []       = []
-mergeMin nWires segments = case seamOf $ head segments of
-    Stop    -> head segments : (mergeMin nWires $ tail segments)
-    Value _ -> valley' ++ mergeMin nWires segments'
+mergeMin :: ([Gate] -> Hypergraph) -> (Hypergraph -> String -> Partition) -> Int -> [Segment] -> [Segment]
+mergeMin toHypergraph toPartition nWires []       = []
+mergeMin toHypergraph toPartition nWires segments = case seamOf $ head segments of
+    Stop    -> head segments : (mergeMin toHypergraph toPartition nWires $ tail segments)
+    Value _ -> valley' ++ mergeMin toHypergraph toPartition nWires segments'
     _       -> error "Error when merging segments."
   where
     valley' = if countCuts leftSeg + countCuts rightSeg + countTeles partLeft partRight < countCuts mergedSeg 
       then map (\(gs,hyp,part,_,id) -> (gs,hyp,part,Stop,id)) (beforeMin++afterMin)
       else beforeMin ++ mergedSeg : (drop 2 afterMin) -- Remove from afterMin the two segments that have been merged
     mergedSeg = (mergedGates, mergedHyp, mergedPart, Compute, (fst idLeft, snd idRight) )
-    mergedPart = getPartition mergedHyp nWires $ (show $ fst idLeft) ++ "_" ++ (show $ snd idRight)
-    mergedHyp = buildHyp mergedGates nWires
+    mergedPart = toPartition mergedHyp $ (show $ fst idLeft) ++ "_" ++ (show $ snd idRight)
+    mergedHyp = toHypergraph mergedGates
     mergedGates = gsLeft++gsRight
     leftSeg@ (gsLeft, _,partLeft, _,idLeft)  = head afterMin
     rightSeg@(gsRight,_,partRight,_,idRight) = head $ tail afterMin -- Always exists, as there's always another segment after the minimum (i.e. the one it's seam refers to)
@@ -122,26 +124,26 @@ findValleyRec (s:ss) pos (Just m) = case seamOf $ head ss of  -- The minimum is 
 
 
 -- Calls a third party software to solve the hypergraph partitioning problem
-getPartition :: Hypergraph -> Int -> String -> Partition
-getPartition hypergraph nWires id = if head fileData == '0' 
+getPartition :: (K,Epsilon,PartAlg,PartDir) -> Int -> Hypergraph -> String -> Partition
+getPartition (k,epsilon,algorithm,partDir) nWires hypergraph id = if head fileData == '0' 
     then error $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
     else partition
   where
-    (fileData, hypHEdges, hypVertices) = hypToString Cfg.algorithm hypergraph nWires
-    hypPart = unsafePerformIO $ getPartitionIO fileData id
+    (fileData, hypHEdges, hypVertices) = hypToString algorithm hypergraph nWires
+    hypPart = unsafePerformIO $ getPartitionIO (k,epsilon, algorithm, partDir) fileData id
     partList = map read (concat . map words . lines $ hypPart)
     partition = M.fromList $ zip [0..] partList
 
-getPartitionIO :: String -> String -> IO String
-getPartitionIO fileData id = let 
-    k = show Cfg.k; epsilon = showFFloat (Just 2) Cfg.epsilon "";
+getPartitionIO :: (K,Epsilon,PartAlg,PartDir) -> String -> String -> IO String
+getPartitionIO (k, epsilon, algorithm, partDir) fileData id = let 
+    epsilon' = showFFloat (Just 2) epsilon "";
     hypFile  = "temp/hyp_"++id++".hgr"
     partFile = "temp/part_"++id++".hgr"
-    script Cfg.Kahypar = Cfg.partDir++"KaHyPar -h "++hypFile++" -k "++k++" -e "++epsilon++" -m direct -o km1 -p "++Cfg.partDir++Cfg.subalgorithm++" -q true"
-    script Cfg.Patoh = Cfg.partDir++"PaToH "++hypFile++" "++k++" FI="++epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
+    script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++epsilon'++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
+    script Patoh = partDir++"PaToH "++hypFile++" "++show k++" FI="++epsilon'++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
   in do 
     writeFile hypFile $ fileData 
-    HSH.run $ script Cfg.algorithm :: IO () 
+    HSH.run $ script algorithm :: IO () 
     HSH.run $ "mv "++hypFile++".part* "++partFile :: IO ()
     putStrLn id
     readFile partFile

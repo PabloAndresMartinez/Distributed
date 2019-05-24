@@ -10,29 +10,30 @@ import QuipperLib.Decompose
 import QuipperLib.Decompose.CliffordT
 import QuipperLib.Unboxing
 
-import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 
-prepareCircuit ::  (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> (qin -> Circ qout)
-prepareCircuit circ shape = pushSingleQGates (step5 $ step4 $ step3 $ step2 $ step1 circ) shape
+prepareCircuit :: (QCData qin, QCData qout) => KeepToffoli -> (qin -> Circ qout) -> qin -> (qin -> Circ qout)
+prepareCircuit keepToffoli circ shape = pushSingleQGates (step5 $ step4 $ step3 $ step2 $ step1 circ) shape
   where
     step1 = unbox_recursive -- Inline all subroutines
-    step2 = if Cfg.keepToffoli then decompose_generic Toffoli else id
-    step3 = transform_generic standard_transformer' . transform_generic exact_ct_transformer' . transform_generic approx_ct_transformer' -- Essentially, decompose_generic Standard, but ignoring Toffoli gates if f_toffoli is True
+    step2 = if keepToffoli then decompose_generic Toffoli else id
+    step3 = if keepToffoli 
+      then transform_generic standard_transformer' . transform_generic exact_ct_transformer' . transform_generic approx_ct_transformer' -- Essentially, decompose_generic Standard, but ignoring Toffoli gates if f_toffoli is True
+      else transform_generic standard_transformer . transform_generic exact_ct_transformer . transform_generic (approx_ct_transformer False (3*digits) (mkStdGen 1234))
     step4 = transform_generic separateClassicalControl . transform_generic swapRemover
     step5 = transform_generic toControlledZ
 
 -- The following three transformers are a version of the ones defined by Quipper, but ignoring Toffoli gates if the flag is True.
 approx_ct_transformer' :: Transformer Circ Qubit Bit
-approx_ct_transformer' g@(T_QGate "not" 1 0 _ _ _) = if Cfg.keepToffoli then identity_transformer g else approx_ct_transformer False (3*digits) (mkStdGen 1234) g
+approx_ct_transformer' g@(T_QGate "not" 1 0 _ _ _) = identity_transformer g
 approx_ct_transformer' g                           = approx_ct_transformer False (3*digits) (mkStdGen 1234) g
 
 exact_ct_transformer' :: Transformer Circ Qubit Bit
-exact_ct_transformer' g@(T_QGate "not" 1 0 _ _ _) = if Cfg.keepToffoli then identity_transformer g else exact_ct_transformer g
+exact_ct_transformer' g@(T_QGate "not" 1 0 _ _ _) = identity_transformer g
 exact_ct_transformer' g                           = exact_ct_transformer g
 
-standard_transformer' ::Transformer Circ Qubit Bit
-standard_transformer' g@(T_QGate "not" 1 0 _ _ _) = if Cfg.keepToffoli then identity_transformer g else standard_transformer g
+standard_transformer' :: Transformer Circ Qubit Bit
+standard_transformer' g@(T_QGate "not" 1 0 _ _ _) = identity_transformer g
 standard_transformer' g                           = standard_transformer g
 
 -- Gate decomposition from Quipper does not decompose SWAP into CNOT gates

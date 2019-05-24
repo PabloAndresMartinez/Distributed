@@ -1,6 +1,0 @@
-#!/bin/bash
-
-quipper -O2 *.hs
-
-rm *o
-rm *hi

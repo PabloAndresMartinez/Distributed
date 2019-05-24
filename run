@@ -1,5 +1,0 @@
-#!/bin/bash
-
-rm Main
-./compile
-(/usr/bin/time -f "CPU Time: %es" ./Main) # > stdout 2>&1

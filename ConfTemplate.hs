@@ -1,28 +1,16 @@
 module Distributer.Configuration where
 
 import Distributer.Examples
-import Quipper.Printing
+import Distributer.Input
 
--- Path to the directory containing the hypergraph partitioning program
-partDir = "./"
+cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used
+alenex17 = "kahypar/config/km1_direct_kway_alenex17.ini"
+sea17 = "kahypar/config/km1_direct_kway_sea17.ini"
+sea18 = "kahypar/config/km1_direct_kway_sea18.ini"
+gecco18 = "kahypar/config/km1_direct_kway_gecco18.ini" -- Evolutionary Algorith,
 
--- Partitioning parameters
-algorithm = Kahypar
 subalgorithm = sea18
-k = 5 :: Int
-epsilon = 0.03
 
--- Segmentation parameters
-initSegSize = 1000 :: Int
-maxHedgeDist = 500 :: Int
-
--- Set True to activate each extension, False to deactivate it
-keepToffoli = False
-
--- The input circuit and its shape. Must be some of the cases from Examples.hs, listed below
-circuit = qft 200
--- Show output (either Preview, to see the circuit, or GateCount, to see the stats):
-outputAs = GateCount
 {- List of available values for circuit:
 
 -- From Quipper --
@@ -43,9 +31,6 @@ usvG -- g_quantum from USV
 tf  -- Triangle Finding problem 
 
 -- Custom --
-classical
-classical2
-subroutineCirc
 simple
 simple2
 simple3
@@ -59,12 +44,3 @@ interesting3
 
 -}
 
--- DO NOT CHANGE (aliases configuration) --
-
-data PartAlg = Kahypar | Patoh
-
-cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used
-alenex17 = "kahypar/config/km1_direct_kway_alenex17.ini"
-sea17 = "kahypar/config/km1_direct_kway_sea17.ini"
-sea18 = "kahypar/config/km1_direct_kway_sea18.ini"
-gecco18 = "kahypar/config/km1_direct_kway_gecco18.ini" -- Evolutionary Algorith,

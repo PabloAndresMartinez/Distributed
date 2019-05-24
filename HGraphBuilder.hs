@@ -6,16 +6,15 @@ import Data.List (nub)
 import Quipper
 import Quipper.Circuit
 
-import qualified Distributer.Configuration as Cfg
 import Distributer.Common
 
-buildHyp :: [Gate] -> Int -> Hypergraph
-buildHyp gs nWires = M.map splitLongHedges $ M.map (filter (\(_,ws,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
+buildHyp :: MaxHedgeDist -> Int -> [Gate] -> Hypergraph
+buildHyp maxHedgeDist nWires gs = M.map splitLongHedges $ M.map (filter (\(_,ws,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
   where
     hyp = toPositive $ buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
     toPositive = M.map (map (\(i,ws,o) -> (i,map (\(w,p) -> (nWires-w-1,p)) ws,o)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
     splitLongHedges []            = []
-    splitLongHedges ((i,ws,o):hs) = if Cfg.maxHedgeDist < o - i
+    splitLongHedges ((i,ws,o):hs) = if maxHedgeDist < o - i
       then let x = i + (o - i) `div` 2 in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
       else (i,ws,o) : splitLongHedges hs
     before x (_,p) = p < x
@@ -48,13 +47,13 @@ countCuts (_,hyp,part,_,_) = sum $ map (\n -> n-1) blocksPerHedge
     blocksPerHedge = map (length . nub . map (part M.!)) flatData
     flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_) -> v:(map (\(w,_) -> w) vs)) vss ++ hs) [] hyp
 
-hypToString :: Cfg.PartAlg -> Hypergraph -> Int -> (String, Int, Int)
+hypToString :: PartAlg -> Hypergraph -> Int -> (String, Int, Int)
 hypToString alg hyp n = (fileData, nHedges, nVertices)
   where    
     flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss ++ hs) [] hyp
     fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map nub flatData) ++ verticesWeights -- map nub flatData is removing repeated vertices within a hedge
-    fstLine Cfg.Kahypar = [nHedges, nVertices, 10]
-    fstLine Cfg.Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
+    fstLine Kahypar = [nHedges, nVertices, 10]
+    fstLine Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
     verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]
     nVertices = foldr (max . foldr max 0) 0 flatData
     nHedges   = length flatData

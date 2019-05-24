@@ -55,15 +55,15 @@ buildCircuitRec nWires bindings segments = case segments of
     _:_  -> (distGates ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + nextEbits, length teleGates + nextTPs)
   where
     (nextGates, nextWires, nextEbits, nextTPs) = buildCircuitRec nWires bindings' (tail segments) 
-    (distGates, thisWires, thisEbits) = distribute thisGates thisHyp thisPart
+    (distGates, thisWires, thisEbits) = distributeGates thisGates thisHyp thisPart
     (thisGates, thisHyp, thisPart,_,_) = head segments
     (_,         _,       nextPart,_,_) = head $ tail segments
     bindings' = updBindings thisGates bindings
     teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> bindings' M.! w && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CZ-vertices!
     teleAt w = QGate "teleport" False [w] [] [] False
 
-distribute :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)
-distribute gates hypergraph partition = (allocateEbits components gatesWithCZs eDic 0, nWires, nEbits)
+distributeGates :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)
+distributeGates gates hypergraph partition = (allocateEbits components gatesWithCZs eDic 0, nWires, nEbits)
   where 
     gatesWithCZs = distributeCZs nonlocal gates partition eDic 0
     nonlocal = nonLocalCZs partition hypergraph
@@ -72,6 +72,18 @@ distribute gates hypergraph partition = (allocateEbits components gatesWithCZs e
     (nWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
     addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b) we allocate a new pair of negative wires
 
+distributeCZs :: [NonLocalCZ] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
+distributeCZs []     gs partition _    prev = gs
+distributeCZs (c:cs) gs partition eDic prev = gsInit ++ distributeCZs cs (g':tail gsTail) partition eDic pos
+  where
+    gsInit  = take (pos-prev) gs
+    gsTail  = drop (pos-prev) gs
+    g' = QGate "CZ" False [target] [] [Signed ebit True] False
+    (_, source, sink, pos, _) = c 
+    ebit = eDic M.! (source, partition M.! sink) - 1
+    (w1,w2) = getWires (head gsTail)
+    target = if w1 == source then w2 else w1
+    
 -- Note: The order how the components are added is essential. It must be from the end to the beginning.
 allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> Int -> [Gate]
 allocateEbits []     gates eDic _    = gates
@@ -103,14 +115,3 @@ nonLocalCZs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare po
     czs      = foldr (\(i,v,ws,o) cs -> map (\(w,p) -> (i,v,w,p,o)) ws ++ cs) [] hedges
     hedges   = M.foldrWithKey (\v vss hs -> map (\(i,ws,o) -> (i,v,ws,o)) vss ++ hs) [] hyp
 
-distributeCZs :: [NonLocalCZ] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
-distributeCZs []     gs partition _    prev = gs
-distributeCZs (c:cs) gs partition eDic prev = gsInit ++ distributeCZs cs (g':tail gsTail) partition eDic pos
-  where
-    gsInit  = take (pos-prev) gs
-    gsTail  = drop (pos-prev) gs
-    g' = QGate "CZ" False [target] [] [Signed ebit True] False
-    (_, source, sink, pos, _) = c 
-    ebit = eDic M.! (source, partition M.! sink) - 1
-    (w1,w2) = getWires (head gsTail)
-    target = if w1 == source then w2 else w1
