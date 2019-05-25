@@ -1,6 +1,7 @@
 module Distributer.Common where
 
 import qualified Data.Map as M
+import Data.List (nub)
 
 import Quipper
 import Quipper.Circuit
@@ -10,7 +11,7 @@ type K = Int
 type Epsilon = Float
 type InitSegSize = Int
 type MaxHedgeDist = Int
-type KeepToffoli = Bool
+type KeepCCZ = Bool
 data PartAlg = Kahypar | Patoh
 type PartDir = String
 type OutputPreview = Bool
@@ -78,15 +79,15 @@ isClassical _ = False
 getControls :: Gate -> [Signed Wire]
 getControls (QGate _ _ _ [] ctrls _) = ctrls
 
-getWires :: Gate -> (Wire,Wire)
-getWires (QGate "CZ" _ [target] [] [signedCtrl] _) = (ctrl,target)
-  where ctrl = from_signed signedCtrl
+getWires :: Gate -> [Wire]
+getWires (QGate "CZ" _ [target] [] signedCtrls _) = target : ctrls
+  where ctrls = map from_signed signedCtrls
 
 -- Notice that this number is always going to be less or equal than (length $ nonLocalCZs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CZs twice
 countNonLocal :: [Segment] -> Int
 countNonLocal []     = 0
 countNonLocal (s:ss) = nonLocal + countNonLocal ss
   where
-    nonLocal = length $ filter (\(w1,w2) -> thisPart M.! w1 /= thisPart M.! w2) czs
+    nonLocal = sum $ map (\ws -> length ws - 1) $ map (\ws -> nub $ map (thisPart M.!) ws) czs
     czs = map getWires $ filter isCZ thisGates
     (thisGates,_,thisPart,_,_) = s

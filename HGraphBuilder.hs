@@ -24,15 +24,15 @@ buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
 buildHypRec []     _ _  = M.empty
 buildHypRec (g:gs) n czVertex = if isClassical g then buildHypRec gs (n+1) czVertex
   else case g of
-    (QGate "CZ" _ [target] [] [signedCtrl] _) -> newCZAt control target
+    (QGate "CZ" _ [target] [] signedCtrls _) -> newCZAt (target:controls)
       where
-        newCZAt ctrl target = M.alter (newCZ czVertex) target $ M.alter (newCZ czVertex) ctrl $ buildHypRec gs (n+1) (czVertex-1)
+        newCZAt []     = buildHypRec gs (n+1) (czVertex-1)
+        newCZAt (w:ws) = M.alter (newCZ czVertex) w $ newCZAt ws
         newCZ v h = case h of 
           Nothing -> Just [(nan,[(v-1,n)],n+1)] -- n+1 because it finishes AFTER this gate
           Just ((_,ws,o):es) -> Just ((nan,(v-1,n):ws,o):es) -- Add the czVertex to the last hyperedge group on that wire
         nan = 0
-        control = getWire signedCtrl
-        getWire (Signed w s) = if s then w else error $ "Negative control" -- As Clifford+T only allows positive controls
+        controls = map from_signed signedCtrls
     _ -> newHedgeAt $ targetOf g
       where
         newHedgeAt wire  = M.alter newHedge wire $ buildHypRec gs (n+1) czVertex -- Subsequent CZs on 'wire' create a new hyperedge
@@ -53,7 +53,8 @@ hypToString alg hyp n = (fileData, nHedges, nVertices)
     flatData = M.foldrWithKey (\v vss hs -> map (\(_,vs,_) -> (v+1):(map (\(w,_) -> w+1) vs)) vss ++ hs) [] hyp
     fileData = (unlines . (map (unwords . (map show)))) $ (fstLine alg) : (map nub flatData) ++ verticesWeights -- map nub flatData is removing repeated vertices within a hedge
     fstLine Kahypar = [nHedges, nVertices, 10]
-    fstLine Patoh   = [1, nVertices, nHedges, (nVertices-n)*2+nHedges, 1]
+    fstLine Patoh   = [1, nVertices, nHedges, nPins, 1]
     verticesWeights = [[1] | _ <- [1..n]] ++ [[0] | _ <- [(n+1)..nVertices]]
     nVertices = foldr (max . foldr max 0) 0 flatData
     nHedges   = length flatData
+    nPins     = nHedges + (M.foldr (+) 0 $ M.map (sum . map (\(_,vs,_) -> length vs)) hyp )

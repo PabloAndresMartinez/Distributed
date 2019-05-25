@@ -12,12 +12,12 @@ import QuipperLib.Unboxing
 
 import Distributer.Common
 
-prepareCircuit :: (QCData qin, QCData qout) => KeepToffoli -> (qin -> Circ qout) -> qin -> (qin -> Circ qout)
-prepareCircuit keepToffoli circ shape = pushSingleQGates (step5 $ step4 $ step3 $ step2 $ step1 circ) shape
+prepareCircuit :: (QCData qin, QCData qout) => KeepCCZ -> (qin -> Circ qout) -> qin -> (qin -> Circ qout)
+prepareCircuit keepCCZ circ shape = pushSingleQGates (step5 $ step4 $ step3 $ step2 $ step1 circ) shape
   where
     step1 = unbox_recursive -- Inline all subroutines
-    step2 = if keepToffoli then decompose_generic Toffoli else id
-    step3 = if keepToffoli 
+    step2 = if keepCCZ then decompose_generic Toffoli else id
+    step3 = if keepCCZ 
       then transform_generic standard_transformer' . transform_generic exact_ct_transformer' . transform_generic approx_ct_transformer' -- Essentially, decompose_generic Standard, but ignoring Toffoli gates if f_toffoli is True
       else transform_generic standard_transformer . transform_generic exact_ct_transformer . transform_generic (approx_ct_transformer False (3*digits) (mkStdGen 1234))
     step4 = transform_generic separateClassicalControl . transform_generic swapRemover
@@ -38,13 +38,12 @@ standard_transformer' g                           = standard_transformer g
 
 -- Gate decomposition from Quipper does not decompose SWAP into CNOT gates
 swapRemover :: Transformer Circ Qubit Bit
-swapRemover (T_QGate "swap" 2 0 _ ncf f) = f $
-  \[q0, q1] [] ctrls -> without_controls_if ncf $ do
-    with_controls ctrls $ do
-      qnot_at q0 `controlled` q1
-      qnot_at q1 `controlled` q0
-      qnot_at q0 `controlled` q1
-      return ([q0, q1], [], ctrls)
+swapRemover (T_QGate "swap" 2 0 _ _ f) = f $
+  \[q0, q1] [] ctrls -> do
+    qnot_at q0 `controlled` q1
+    qnot_at q1 `controlled` q0
+    qnot_at q0 `controlled` q1
+    return ([q0, q1], [], ctrls)
 swapRemover g = identity_transformer g
 
 -- Used to prevent the creation of hyperedges when the 'not' gate is only classically controlled
@@ -74,25 +73,38 @@ toControlledZ g@(T_QGate "not" 1 0 _ _ f) = f $
     return ([target], [], ctrls)
 toControlledZ g = identity_transformer g
 
+-- This function:
+--    a) Pushes one qubit gates through CZ and CCZ gates,
+--    b) Removes comments,
+--    c) Converts negative controls to positive control by applying X gates before and after the control.
 pushSingleQGates :: (QCData qin, QCData qout) => (qin -> Circ qout) -> qin -> (qin -> Circ qout)
 pushSingleQGates circ shape = unencapsulate_generic (x,((arin,theGates',arout,w),ns),y)
   where
     (x,((arin,theGates,arout,w),ns),y) = encapsulate_generic id circ shape
     theGates' = pushRec theGates $ M.fromList [(x,[]) | x <- [0..(w-1)]]
 
--- We must beware of possible classical controls of the gates. Quantum controls may only appear in CZ, thanks to previous preprocessing
+-- We must beware of possible classical controls of the gates. Quantum controls may only appear in CZ, thanks to previous preprocessing.
 pushRec :: [Gate] -> M.Map Wire [Gate] -> [Gate]
 pushRec []     past = foldr (\(_,gs) l -> reverse gs ++ l) [] $ M.toList past
-pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: it acts on a classical wire, so it doesn't affect our algorithm
+pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: it acts on a classical wire, so it doesn't affect our algorithm.
   else case g of 
-    (QGate "CZ" _ [w] [] cs _) -> flushed ++ g : pushRec gs pushedPast
+    (QGate "CZ" _ [w] [] [Signed ctrl positive] False) -> flushed ++ g : pushRec (gateZNegCtrl++gs) pushedPast -- A CZ gate.
       where
         flushed = concat $ map (\(p,wPast) -> reverse $ dropWhile isNotH wPast) wirePasts
-        pushedPast = foldr (\(p, wPast) past' -> M.insert p (addByproducts wPast ctrls) past') past toPush -- Inserting overwrites that wire's values
+        pushedPast = foldr (\(p, wPast) past' -> M.insert p (pushThese wPast (w,ctrl)) past') past toPush -- Inserting overwrites that wire's values
         toPush = map (\(p,wPast) -> (p, takeWhile isNotH wPast)) wirePasts
-        isNotH gate = not $ "H" == nameOf gate
+        isNotH gate = "H" /= nameOf gate
+        wirePasts = map (\p -> (p, past M.! p)) [w,ctrl]
+        gateZNegCtrl = if positive then [] else [(QGate "Z" False [w] [] [] False)] -- Once the X is pushed through the CZ, only a Z remains on the other wire
+    (QGate "CZ" _ [w] [] cs False) -> flushed ++ gatesXNegCtrls ++ g : pushRec (gatesXNegCtrls++gs) pushedPast -- A CCZ gate.
+      where
+        flushed = concat $ map (\(p,wPast) -> reverse $ dropWhile isNotHorX wPast) wirePasts
+        pushedPast = foldr (\(p, wPast) past' -> M.insert p wPast past') past toPush -- Inserting overwrites that wire's values.
+        toPush = map (\(p,wPast) -> (p, takeWhile isNotHorX wPast)) wirePasts
+        isNotHorX gate = "H" /= nameOf gate && "X" /= nameOf gate -- Note that if X were pushed, a CZ byproduct would appear.
         wirePasts = map (\p -> (p, past M.! p)) (w:ctrls)
         ctrls = map from_signed cs
+        gatesXNegCtrls = addXforNegControls $ map from_signed $ filter (\(Signed _ positive) -> not positive) cs
     (QGate "Z"  _ [w] [] cs ncf) -> if (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && (null $ getControls (getHeadAt w))
       then pushRec gs (appendToDic w (getHeadAt w) $ appendToDic w (gateX w cs ncf) $ tailFrom w past) -- Flip with Hadamard and append
       else pushRec gs (appendToDic w g past)                                                           -- Just add to past
@@ -126,7 +138,14 @@ pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: 
     nameOf (QGate name _ _ _ _ _) = name 
     standardError = "Gate "++show g++" is not handled when pushing single qubit gates forward."
 
-addByproducts :: [Gate] -> [Wire] -> [Gate]
-addByproducts [] _ = []
-addByproducts (g@(QGate "X" _ _ [] cs ncf):gs) wires = map (\w -> QGate "Z" False [w] [] cs ncf) wires ++ g : addByproducts gs wires
-addByproducts (g:gs) wires = g : addByproducts gs wires
+pushThese :: [Gate] -> (Wire,Wire) -> [Gate]
+pushThese [] _ = []
+pushThese (g@(QGate "X" _ [target] [] cs ncf):gs) (w1,w2) = byproduct : g : pushThese gs (w1,w2)
+  where
+    byproduct = (QGate "Z" False [wire] [] cs ncf)
+    wire = if w1 == target then w2 else w1 -- pushing an X gate through a CZ, generates a byproduct Z gate on the other wire.
+pushThese (g:gs) wires = g : pushThese gs wires
+
+addXforNegControls :: [Wire] -> [Gate]
+addXforNegControls []     = []
+addXforNegControls (w:ws) = (QGate "X" False [w] [] [] False) : addXforNegControls ws

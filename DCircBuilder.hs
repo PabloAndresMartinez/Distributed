@@ -9,7 +9,7 @@ import Quipper.Generic
 
 import Distributer.Common
 
-type NonLocalCZ = (Int,Wire,Wire,Int,Int) -- (i,v,w,p,o); i (o) initial (final) pos of hedge it belongs to, v and w are the wires the CZ acts on, p its position
+type NonLocalConnection = (Int,Wire,Wire,Int,Int) -- (i,v,w,p,o); i (o) initial (final) pos of hedge it belongs to, v and w are the wires the CZ acts on, p its position
 type EDic = M.Map (Wire,Block) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
 data EbitComponent = Entangler (Wire,Block) Int | Disentangler (Wire,Block) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
 type BindingFlags = M.Map Wire Bool
@@ -72,17 +72,24 @@ distributeGates gates hypergraph partition = (allocateEbits components gatesWith
     (nWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
     addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b) we allocate a new pair of negative wires
 
-distributeCZs :: [NonLocalCZ] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
+distributeCZs :: [NonLocalConnection] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
 distributeCZs []     gs partition _    prev = gs
-distributeCZs (c:cs) gs partition eDic prev = gsInit ++ distributeCZs cs (g':tail gsTail) partition eDic pos
+distributeCZs (c:cs) gs partition eDic prev = gsInit ++ distributeCZs (drop (length thisCs - 1) cs) (g':tail gsTail) partition eDic pos
   where
-    gsInit  = take (pos-prev) gs
-    gsTail  = drop (pos-prev) gs
-    g' = QGate "CZ" False [target] [] [Signed ebit True] False
-    (_, source, sink, pos, _) = c 
-    ebit = eDic M.! (source, partition M.! sink) - 1
-    (w1,w2) = getWires (head gsTail)
-    target = if w1 == source then w2 else w1
+    gsInit = take (pos-prev) gs
+    gsTail = drop (pos-prev) gs
+    g' = connectCZTo thisCs ws partition eDic
+    thisCs = c : takeWhile (\(_,_,_,pos',_) -> pos == pos') cs
+    (_,_,_,pos,_) = c
+    ws = getWires (head gsTail)
+
+connectCZTo :: [NonLocalConnection] -> [Wire] -> Partition -> EDic -> Gate
+connectCZTo []     ws partition eDic = QGate "CZ" False [head ws] [] (map (\w -> Signed w True) $ tail ws) False
+connectCZTo (c:cs) ws partition eDic = connectCZTo cs ws' partition eDic
+  where
+    ws' = map (\w -> if w == wire then ebit else w) ws
+    (_, wire, sink, pos, _) = c 
+    ebit = eDic M.! (wire, partition M.! sink) - 1
     
 -- Note: The order how the components are added is essential. It must be from the end to the beginning.
 allocateEbits :: [EbitComponent] -> [Gate] -> EDic -> Int -> [Gate]
@@ -101,14 +108,14 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     -- explicitBell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
-ebitInfo :: Partition -> [NonLocalCZ] -> [EbitComponent]
+ebitInfo :: Partition -> [NonLocalConnection] -> [EbitComponent]
 ebitInfo partition nonlocal = sort $ disentanglers ++ entanglers
   where
     entanglers    = map (\(n,c,b,_) -> Entangler    (c,b) n) eInfo
     disentanglers = map (\(_,c,b,n) -> Disentangler (c,b) n) eInfo
     eInfo = nub $ map (\(i,c,w,_,o) -> (i,c,partition M.! w,o)) nonlocal -- This nub makes sure there's only one element per cut between gate positions [i,o]
 
-nonLocalCZs :: Partition -> Hypergraph -> [NonLocalCZ]
+nonLocalCZs :: Partition -> Hypergraph -> [NonLocalConnection]
 nonLocalCZs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare pos1 pos2) nonlocal
   where
     nonlocal = filter (\(_,src,snk,_,_) -> partition M.! src /= partition M.! snk) czs
