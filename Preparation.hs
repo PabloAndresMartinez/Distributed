@@ -88,33 +88,34 @@ pushRec :: [Gate] -> M.Map Wire [Gate] -> [Gate]
 pushRec []     past = foldr (\(_,gs) l -> reverse gs ++ l) [] $ M.toList past
 pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: it acts on a classical wire, so it doesn't affect our algorithm.
   else case g of 
-    (QGate "CZ" _ [w] [] [Signed ctrl positive] False) -> flushed ++ g : pushRec (gateZNegCtrl++gs) pushedPast -- A CZ gate.
+    (QGate "CZ" _ [w] [] [Signed ctrl positive] False) -> flushed ++ g : pushRec (gateZNegCtrl++toPush++gs) flushedPast -- A CZ gate.
       where
-        flushed = concat $ map (\(p,wPast) -> reverse $ dropWhile isNotH wPast) wirePasts
-        pushedPast = foldr (\(p, wPast) past' -> M.insert p (pushThese wPast (w,ctrl)) past') past toPush -- Inserting overwrites that wire's values
-        toPush = map (\(p,wPast) -> (p, takeWhile isNotH wPast)) wirePasts
+        flushed = concat $ map (reverse . dropWhile isNotH) wirePasts
+        toPush = addByproducts (concat $ map (reverse . takeWhile isNotH) wirePasts) (w,ctrl)
+        flushedPast = flushAt w $ flushAt ctrl past
         isNotH gate = "H" /= nameOf gate
-        wirePasts = map (\p -> (p, past M.! p)) [w,ctrl]
+        wirePasts = map (past M.!) [w,ctrl]
         gateZNegCtrl = if positive then [] else [(QGate "Z" False [w] [] [] False)] -- Once the X is pushed through the CZ, only a Z remains on the other wire
-    (QGate "CZ" _ [w] [] cs False) -> flushed ++ gatesXNegCtrls ++ g : pushRec (gatesXNegCtrls++gs) pushedPast -- A CCZ gate.
+    (QGate "CZ" _ [w] [] cs False) -> flushed ++ gatesXNegCtrls ++ g' : pushRec (gatesXNegCtrls++toPush++gs) flushedPast -- A CCZ gate.
       where
-        flushed = concat $ map (\(p,wPast) -> reverse $ dropWhile isNotHorX wPast) wirePasts
-        pushedPast = foldr (\(p, wPast) past' -> M.insert p wPast past') past toPush -- Inserting overwrites that wire's values.
-        toPush = map (\(p,wPast) -> (p, takeWhile isNotHorX wPast)) wirePasts
+        flushed = concat $ map (reverse . dropWhile isNotHorX) wirePasts
+        toPush  = concat $ map (reverse . takeWhile isNotHorX) wirePasts
+        flushedPast = foldr flushAt past (w:ctrls)
         isNotHorX gate = "H" /= nameOf gate && "X" /= nameOf gate -- Note that if X were pushed, a CZ byproduct would appear.
-        wirePasts = map (\p -> (p, past M.! p)) (w:ctrls)
+        wirePasts = map (past M.!) (w:ctrls)
         ctrls = map from_signed cs
+        g' = QGate "CZ" False [w] [] (map (\c -> Signed c True) ctrls) False
         gatesXNegCtrls = addXforNegControls $ map from_signed $ filter (\(Signed _ positive) -> not positive) cs
-    (QGate "Z"  _ [w] [] cs ncf) -> if (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && (null $ getControls (getHeadAt w))
+    (QGate "Z"  _ [w] [] cs ncf) -> if safeHeadIsHnoCtrls w
       then pushRec gs (appendToDic w (getHeadAt w) $ appendToDic w (gateX w cs ncf) $ tailFrom w past) -- Flip with Hadamard and append
       else pushRec gs (appendToDic w g past)                                                           -- Just add to past
-    (QGate "X"  _ [w] [] cs ncf) -> if (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && (null $ getControls (getHeadAt w)) 
+    (QGate "X"  _ [w] [] cs ncf) -> if safeHeadIsHnoCtrls w
       then pushRec gs (appendToDic w (getHeadAt w) $ appendToDic w (gateZ w cs ncf) $ tailFrom w past) -- Flip with Hadamard and append
       else pushRec gs (appendToDic w g past)                                                           -- Just add to past
-    (QGate "Y"  _ [w] [] cs ncf) -> if (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && (null $ getControls (getHeadAt w))
+    (QGate "Y"  _ [w] [] cs ncf) -> if safeHeadIsHnoCtrls w
       then pushRec gs (appendToDic w (getHeadAt w) $ appendToDic w (gateZ w cs ncf) $ appendToDic w (gateX w cs ncf) $ tailFrom w past) 
       else pushRec gs (appendToDic w (gateX w cs ncf) $ appendToDic w (gateZ w cs ncf) past)           -- Y = iXZ, so same as having Z then X
-    (QGate "H"  _ [w] [] cs ncf) -> if (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && null cs && (null $ getControls (getHeadAt w)) 
+    (QGate "H"  _ [w] [] cs ncf) -> if safeHeadIsHnoCtrls w && null cs
       then pushRec gs (tailFrom w past)                             -- Hadamards are cancelled
       else pushRec gs (appendToDic w g past)                        -- Add the gate to the past
     (QGate "S"  _ [w] [] _ _)  -> pushRec gs (appendToDic w g past) -- Just add to past
@@ -131,6 +132,7 @@ pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: 
     appendToDic w gate dic = M.alter (\(Just l) -> Just $ gate:l) w dic
     tailFrom    w      dic = M.alter (\(Just l) -> Just $ tail l) w dic
     flushAt     w      dic = M.alter (\_        -> Just []) w dic
+    safeHeadIsHnoCtrls w = (not $ null $ past M.! w) && "H" == nameOf (getHeadAt w) && (null $ getControls (getHeadAt w))
     getHeadAt w = head $ past M.! w
     gatesAt w dic = (reverse $ dic M.! w)
     gateZ w cs ncf = QGate "Z"  False [w] [] cs ncf
@@ -138,13 +140,13 @@ pushRec (g:gs) past = if isClassical g then g : pushRec gs past -- Just append: 
     nameOf (QGate name _ _ _ _ _) = name 
     standardError = "Gate "++show g++" is not handled when pushing single qubit gates forward."
 
-pushThese :: [Gate] -> (Wire,Wire) -> [Gate]
-pushThese [] _ = []
-pushThese (g@(QGate "X" _ [target] [] cs ncf):gs) (w1,w2) = byproduct : g : pushThese gs (w1,w2)
+addByproducts :: [Gate] -> (Wire,Wire) -> [Gate]
+addByproducts [] _ = []
+addByproducts (g@(QGate "X" _ [target] [] cs ncf):gs) (w1,w2) = byproduct : g : addByproducts gs (w1,w2)
   where
     byproduct = (QGate "Z" False [wire] [] cs ncf)
     wire = if w1 == target then w2 else w1 -- pushing an X gate through a CZ, generates a byproduct Z gate on the other wire.
-pushThese (g:gs) wires = g : pushThese gs wires
+addByproducts (g:gs) wires = g : addByproducts gs wires
 
 addXforNegControls :: [Wire] -> [Gate]
 addXforNegControls []     = []
