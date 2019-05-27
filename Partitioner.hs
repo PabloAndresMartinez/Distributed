@@ -122,7 +122,6 @@ findValleyRec (s:ss) pos (Just m) = case seamOf $ head ss of  -- The minimum is 
     _          -> error "Error when merging segments."
   where (Value rho) = seamOf s
 
-
 -- Calls a third party software to solve the hypergraph partitioning problem
 getPartition :: (K,Epsilon,PartAlg,PartDir) -> Int -> Hypergraph -> String -> Partition
 getPartition (k,epsilon,algorithm,partDir) nWires hypergraph id = if head fileData == '0' 

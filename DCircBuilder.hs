@@ -1,7 +1,7 @@
 module Distributer.DCircBuilder where
 
 import qualified Data.Map as M
-import Data.List (nub, sort, sortBy)
+import Data.List (nub, sort, sortBy, (\\))
 
 import Quipper
 import Quipper.Circuit
@@ -51,9 +51,10 @@ buildCircuit nWires boundWires segments = buildCircuitRec nWires initialBindings
 
 buildCircuitRec :: Int -> BindingFlags -> [Segment] -> ([Gate],Int,Int,Int)
 buildCircuitRec nWires bindings segments = case segments of
-    _:[] -> (distGates, thisWires, thisEbits, 0) 
-    _:_  -> (distGates ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + nextEbits, length teleGates + nextTPs)
+    _:[] -> (distGates', thisWires, thisEbits, 0) 
+    _:_  -> (distGates' ++ teleGates ++ nextGates, max thisWires nextWires, thisEbits + nextEbits, length teleGates + nextTPs)
   where
+    distGates' = addPartComments bindings thisPart distGates
     (nextGates, nextWires, nextEbits, nextTPs) = buildCircuitRec nWires bindings' (tail segments) 
     (distGates, thisWires, thisEbits) = distributeGates thisGates thisHyp thisPart
     (thisGates, thisHyp, thisPart,_,_) = head segments
@@ -103,8 +104,8 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     sinkE = sourceE-1
     component = if isEntangler c
       then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
-      else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, CDiscard sinkE]
-    bell = [QInit False sinkE False, QInit False sourceE False, QGate "bell" False [sinkE,sourceE] [] [] False]
+      else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, Comment "QPU_allocation" False [(sinkE,"-1")], CDiscard sinkE]
+    bell = [QInit False sinkE False,  QInit False sourceE False, Comment "QPU_allocation" False [(sinkE, show bsink), (sourceE, "-1")], QGate "bell" False [sinkE,sourceE] [] [] False]
     -- explicitBell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
@@ -122,3 +123,17 @@ nonLocalCZs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare po
     czs      = foldr (\(i,v,ws,o) cs -> map (\(w,p) -> (i,v,w,p,o)) ws ++ cs) [] hedges
     hedges   = M.foldrWithKey (\v vss hs -> map (\(i,ws,o) -> (i,v,ws,o)) vss ++ hs) [] hyp
 
+addPartComments :: BindingFlags -> Partition -> [Gate] -> [Gate]
+addPartComments bindings part gates = partComment : gates'
+  where
+    partComment = Comment "QPU_allocation" False $ [(w,show $ part M.! w) | w <- bound]
+    bound = map fst $ filter snd $ M.toList bindings
+    gates' = commentOn gates 
+    commentOn []     = []
+    commentOn (g:gs) = case targetOf g of 
+        Just w -> if w `M.member` bindings && w `elem` createdBy g -- Add a comment determining the wire's QPU every time its qubit is initialized.
+          then g : (Comment "QPU_allocation" False [(w, show $ part M.! w)]) : commentOn  gs
+          else g : commentOn gs
+        Nothing -> g : commentOn gs    
+    createdBy gate = (\(ins,outs) -> filterQbit $ outs \\ ins) $ gate_arity gate
+    filterQbit arity = map fst $ filter (\(_,t) -> case t of Qbit -> True; _ -> False) arity

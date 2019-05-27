@@ -2,7 +2,7 @@
 
 cp ConfTemplate.hs Configuration.hs
 echo "circuit = $1; circuit_name = \"$1\"" >> Configuration.hs
-quipper -O2 Main.hs Configuration.hs Common.hs Preparation.hs Partitioner.hs HGraphBuilder.hs DCircBuilder.hs Examples.hs Input.hs
+quipper -O2 Main.hs Configuration.hs Common.hs Preparation.hs Partitioner.hs HGraphBuilder.hs DCircBuilder.hs Examples.hs Input.hs ColorPrinting.hs
 rm Configuration.hs
 
 rm *o

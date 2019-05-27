@@ -14,7 +14,6 @@ type MaxHedgeDist = Int
 type KeepCCZ = Bool
 data PartAlg = Kahypar | Patoh
 type PartDir = String
-type OutputPreview = Bool
 
 -- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m,b) is a hyperedge:
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CZ, 
@@ -40,26 +39,25 @@ isStop _    = False
 updWith :: Matching -> Segment -> Segment
 updWith matching (gs,hyp,part,seam,id) = (gs, hyp, M.map (\b -> matching M.! b) part, seam, id)
 
-targetOf :: Gate -> Wire
+targetOf :: Gate -> Maybe Wire
 targetOf gate = case gate of
-  (QGate "X"   _ [target] [] _      _) -> target
-  (QGate "Y"   _ [target] [] _      _) -> target
-  (QGate "Z"   _ [target] [] _      _) -> target
-  (QGate "S"   _ [target] [] _      _) -> target
-  (QGate "T"   _ [target] [] _      _) -> target
-  (QGate "H"   _ [target] [] _      _) -> target
-  (QGate _     _ _        _  _      _) -> error standardError
-  (QPrep target _)                     -> target
-  (QUnprep target _)                   -> target
-  (QInit _ target _)                   -> target
-  (CInit _ target _)                   -> target
-  (QTerm _ target _)                   -> target
-  (CTerm _ target _)                   -> target
-  (QMeas target)                       -> target
-  (QDiscard target)                    -> target
-  (CDiscard target)                    -> target
-  _                                    -> error standardError
-  where standardError = "Gate "++show gate++" was not properly prepocessed."
+  (QGate "X"   _ [target] [] _      _) -> Just target
+  (QGate "Y"   _ [target] [] _      _) -> Just target
+  (QGate "Z"   _ [target] [] _      _) -> Just target
+  (QGate "S"   _ [target] [] _      _) -> Just target
+  (QGate "T"   _ [target] [] _      _) -> Just target
+  (QGate "H"   _ [target] [] _      _) -> Just target
+  (QGate _     _ _        _  _      _) -> Nothing
+  (QPrep target _)                     -> Just target
+  (QUnprep target _)                   -> Just target
+  (QInit _ target _)                   -> Just target
+  (CInit _ target _)                   -> Just target
+  (QTerm _ target _)                   -> Just target
+  (CTerm _ target _)                   -> Just target
+  (QMeas target)                       -> Just target
+  (QDiscard target)                    -> Just target
+  (CDiscard target)                    -> Just target
+  _                                    -> Nothing
 
 isCZ :: Gate -> Bool
 isCZ (QGate "CZ" _ _ _ _ _) = True

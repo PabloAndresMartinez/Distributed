@@ -35,7 +35,8 @@ buildHypRec (g:gs) n czVertex = if isClassical g then buildHypRec gs (n+1) czVer
         controls = map from_signed signedCtrls
     _ -> newHedgeAt $ targetOf g
       where
-        newHedgeAt wire  = M.alter newHedge wire $ buildHypRec gs (n+1) czVertex -- Subsequent CZs on 'wire' create a new hyperedge
+        newHedgeAt (Just wire) = M.alter newHedge wire $ buildHypRec gs (n+1) czVertex -- Subsequent CZs on 'wire' create a new hyperedge
+        newHedgeAt Nothing = error $ "Gate "++show g++" was not properly preprocessed."
         newHedge h = case h of 
           Nothing -> Just [(nan,[],n)]
           Just ((_,ws,o):es) -> Just ((nan,[],n):(n+1,ws,o):es) -- Close the last hyperedge group and create a new empty one
