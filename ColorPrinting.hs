@@ -383,6 +383,8 @@ palette 14 = Color_RGB 0.0 0.5 0.5     -- Teal
 palette 15 = Color_RGB 0.5 0.5 0.0     -- Olive   
 palette _  = white
 
+type Dashed = Bool
+
 -- | A data type that holds all the customizable parameters.
 data FormatStyle = FormatStyle {
   -- | The RenderFormat to use.
@@ -391,8 +393,8 @@ data FormatStyle = FormatStyle {
   backgroundcolor :: Color,
   -- | The color of the foreground (e.g. wires and gates).
   foregroundcolor :: Color,
-  -- | The map (dictionary) of colors for each wire
-  colorMap :: Map Wire Color,
+  -- | The map (dictionary) of colors for each wire and pattern.
+  colorMap :: Map Wire (Color, Dashed),
   -- | Line width.
   linewidth :: Double,
   -- | Gap for double line representing classical bit.
@@ -444,15 +446,15 @@ data FormatStyle = FormatStyle {
 } deriving Show
 
 -- | Function that updates 'colorMap'
-updWireColor :: Wire -> Color -> FormatStyle -> FormatStyle
-updWireColor w c fs = fs {
-  colorMap = Map.insert w c $ colorMap fs
+updWireColor :: Wire -> (Color, Dashed) -> FormatStyle -> FormatStyle
+updWireColor w cd fs = fs {
+  colorMap = Map.insert w cd $ colorMap fs
 }
 
 -- | Function that retrieves the color of the wire, given by 'colorMap fs'.
 -- If the wire is not found, the default color is used: white.
-getColor :: FormatStyle -> Wire -> Color
-getColor fs w = if Map.member w (colorMap fs) then (colorMap fs) Map.! w else white
+getColor :: FormatStyle -> Wire -> (Color, Dashed)
+getColor fs w = if Map.member w (colorMap fs) then (colorMap fs) Map.! w else (white, False)
 
 
 -- | A RenderFormat consisting of some default parameters, 
@@ -597,17 +599,23 @@ render_line x0 y0 x1 y1 = draw_subroutine alt $ do
   where
     alt = [custom_ps $ printf "%f %f %f %f line\n" x0 y0 x1 y1]
 
--- | @'render_wire' c x0 y0 x1 y1@: Draw a line from (/x0/, /y0/)
--- to (/x1/, /y1/) with background color /c/
-render_wire :: Color -> X -> Y -> X -> Y -> Draw ()
-render_wire c x0 y0 x1 y1 | x0 == x1 && y0 == y1 = return ()
-render_wire c x0 y0 x1 y1 = draw_subroutine alt $ do
-  rectangle x0 (y0-0.5) (x1-x0) 1
-  fill c
+-- | @'render_wire' (c, dashed) x0 y0 x1 y1@: Draw a line from (/x0/, /y0/)
+-- to (/x1/, /y1/) with background color /c/, with pattern given by /dashed/.
+render_wire :: (Color, Dashed) -> X -> Y -> X -> Y -> Draw ()
+render_wire _           x0 y0 x1 y1 | x0 == x1 && y0 == y1 = return ()
+render_wire (c, dashed) x0 y0 x1 y1 = draw_subroutine alt $ do
+  if dashed 
+    then foldr (\(x,w) d -> background x w >> d) (fill c) (dashes x0 x1)
+    else background x0 (x1-x0) >> fill c
   moveto x0 y0
   lineto x1 y1
   stroke
   where
+    background x w = rectangle x (y0-0.5) w 1
+    dashes a b = let a' = a+dashWidth+dashSep in if a' < b
+      then (a, dashWidth) : dashes a' b
+      else (a, b-a) : []
+    dashWidth = 1.75; dashSep = 0.25
     alt = [custom_ps $ printf "%f %f %f %f line\n" x0 y0 x1 y1]
 
 -- | @'render_dot' x y@: Draw a filled control dot at (/x/,/y/).
@@ -1068,7 +1076,7 @@ render_gates fs xarity xgs ys x maxh =
       in (s2, return ())
     (g,newx):gls -> case g of
       Comment "QPU_allocation" False ws -> 
-        let fs' = foldr (\(w,p) -> updWireColor w (palette $ read p)) fs ws in
+        let fs' = foldr (\(w,l) -> updWireColor w ((\[c,d] -> (palette $ read c, d=="ebit")) $ words l)) fs ws in
         let newComment = (Comment "QPU_allocation" True ws, newx) in -- I use the comment's flag to indicate colors have been updated
         render_gates fs' xarity (newComment:gls) ys x maxh
       _ ->

@@ -104,8 +104,8 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
     sinkE = sourceE-1
     component = if isEntangler c
       then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
-      else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, Comment "QPU_allocation" False [(sinkE,"-1")], CDiscard sinkE]
-    bell = [QInit False sinkE False,  QInit False sourceE False, Comment "QPU_allocation" False [(sinkE, show bsink), (sourceE, "-1")], QGate "bell" False [sinkE,sourceE] [] [] False]
+      else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, Comment "QPU_allocation" False [(sinkE,"-1 ebit")], CDiscard sinkE]
+    bell = [QInit False sinkE False,  QInit False sourceE False, Comment "QPU_allocation" False [(sinkE, show bsink ++ " ebit"), (sourceE, "-1 ebit")], QGate "bell" False [sinkE,sourceE] [] [] False]
     -- explicitBell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
@@ -126,13 +126,13 @@ nonLocalCs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare pos
 addPartComments :: BindingFlags -> Partition -> [Gate] -> [Gate]
 addPartComments bindings part gates = partComment : gates'
   where
-    partComment = Comment "QPU_allocation" False $ [(w,show $ part M.! w) | w <- bound]
+    partComment = Comment "QPU_allocation" False $ [(w,(show $ part M.! w) ++ " qubit") | w <- bound]
     bound = map fst $ filter snd $ M.toList bindings
     gates' = commentOn gates 
     commentOn []     = []
     commentOn (g:gs) = case targetOf g of 
         Just w -> if w `M.member` bindings && w `elem` createdBy g -- Add a comment determining the wire's QPU every time its qubit is initialized.
-          then g : (Comment "QPU_allocation" False [(w, show $ part M.! w)]) : commentOn  gs
+          then g : (Comment "QPU_allocation" False [(w, (show $ part M.! w) ++ " qubit")]) : commentOn  gs
           else g : commentOn gs
         Nothing -> g : commentOn gs    
     createdBy gate = (\(ins,outs) -> filterQbit $ outs \\ ins) $ gate_arity gate
