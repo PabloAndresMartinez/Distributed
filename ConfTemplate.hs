@@ -3,6 +3,8 @@ module Distributer.Configuration where
 import Distributer.Examples
 import Distributer.Input
 
+epsilon = "0.01"
+
 cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used
 alenex17 = "kahypar/config/km1_direct_kway_alenex17.ini"
 sea17 = "kahypar/config/km1_direct_kway_sea17.ini"

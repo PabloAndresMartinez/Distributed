@@ -15,11 +15,11 @@ import Distributer.HGraphBuilder
 
 -- Input is the circuit and the number of wires
 -- Output is the list of partitions, indicating the position at which they end and the 'sub'-hypergraph they correspond to.
-partitioner :: (K,Epsilon,InitSegSize,MaxHedgeDist,PartAlg,PartDir) -> Int -> [Gate] -> [Segment]
-partitioner (k,e,w,m,alg,dir) nWires circ = mergeSeams toHypergraph toPartition k nWires $ ignoreLastSeam $ initialSegments circ 0
+partitioner :: (K,InitSegSize,MaxHedgeDist,PartAlg,PartDir) -> (Int,Int) -> [Gate] -> [Segment]
+partitioner (k,w,m,alg,dir) (nQubits,nWires) circ = mergeSeams toHypergraph toPartition k nWires $ ignoreLastSeam $ initialSegments circ 0
   where    
-    toHypergraph = buildHyp m nWires
-    toPartition = getPartition (k,e,alg,dir) nWires
+    toHypergraph = buildHyp m nQubits
+    toPartition = getPartition (k,alg,dir) nQubits
     initialSegments []    _ = []
     initialSegments gates n = segmentOf thisGates n : initialSegments nextGates (n+1)
       where 
@@ -30,8 +30,9 @@ partitioner (k,e,w,m,alg,dir) nWires circ = mergeSeams toHypergraph toPartition 
         seamPos n gs = (length $ takeWhile (not . isCZ) gs) + 1 + seamPos (n-1) (drop 1 $ dropWhile (not . isCZ) gs)
 
 mergeSeams :: ([Gate] -> Hypergraph) -> (Hypergraph -> String -> Partition) -> K -> Int -> [Segment] -> [Segment]
-mergeSeams toHypergraph toPartition k nWires segments = if allStop then segments else mergeSeams toHypergraph toPartition k nWires segments'
+mergeSeams toHypergraph toPartition k nWires segments = if allStop then segments else segments''
   where
+    segments'' = mergeSeams toHypergraph toPartition k nWires segments'
     segments' = ignoreLastSeam $ mergeMin toHypergraph toPartition nWires $ computeNewSeams nWires $ matchSegments nWires idMatching segments
     allStop = foldr (&&) True $ map (\(_,_,_,seam,_) -> isStop seam) segments
     idMatching = M.fromList [(b,b) | b <- [0..k-1]]
@@ -123,23 +124,22 @@ findValleyRec (s:ss) pos (Just m) = case seamOf $ head ss of  -- The minimum is 
   where (Value rho) = seamOf s
 
 -- Calls a third party software to solve the hypergraph partitioning problem
-getPartition :: (K,Epsilon,PartAlg,PartDir) -> Int -> Hypergraph -> String -> Partition
-getPartition (k,epsilon,algorithm,partDir) nWires hypergraph id = if head fileData == '0' 
+getPartition :: (K,PartAlg,PartDir) -> Int -> Hypergraph -> String -> Partition
+getPartition (k,algorithm,partDir) nQubits hypergraph id = if head fileData == '0' 
     then error $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
     else partition
   where
-    (fileData, hypHEdges, hypVertices) = hypToString algorithm hypergraph nWires
-    hypPart = unsafePerformIO $ getPartitionIO (k,epsilon, algorithm, partDir) fileData id
+    (fileData, hypHEdges, hypVertices) = hypToString algorithm hypergraph nQubits
+    hypPart = unsafePerformIO $ getPartitionIO (k, algorithm, partDir) fileData id
     partList = map read (concat . map words . lines $ hypPart)
     partition = M.fromList $ zip [0..] partList
 
-getPartitionIO :: (K,Epsilon,PartAlg,PartDir) -> String -> String -> IO String
-getPartitionIO (k, epsilon, algorithm, partDir) fileData id = let 
-    epsilon' = showFFloat (Just 2) epsilon "";
+getPartitionIO :: (K,PartAlg,PartDir) -> String -> String -> IO String
+getPartitionIO (k, algorithm, partDir) fileData id = let 
     hypFile  = "temp/hyp_"++id++".hgr"
     partFile = "temp/part_"++id++".hgr"
-    script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++epsilon'++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
-    script Patoh = partDir++"PaToH "++hypFile++" "++show k++" FI="++epsilon'++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
+    script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++Cfg.epsilon++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
+    script Patoh = partDir++"PaToH "++hypFile++" "++show k++" FI="++Cfg.epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
   in do 
     writeFile hypFile $ fileData 
     HSH.run $ script algorithm :: IO () 

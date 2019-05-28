@@ -8,7 +8,7 @@ import Quipper.Circuit
 
 -- Parameters
 type K = Int
-type Epsilon = Float
+type Size = Int
 type InitSegSize = Int
 type MaxHedgeDist = Int
 type KeepCCZ = Bool
@@ -81,7 +81,7 @@ getWires :: Gate -> [Wire]
 getWires (QGate "CZ" _ [target] [] signedCtrls _) = target : ctrls
   where ctrls = map from_signed signedCtrls
 
--- Notice that this number is always going to be less or equal than (length $ nonLocalCZs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CZs twice
+-- Notice that this number is always going to be less or equal than (length $ nonLocalCs part hyp) because the latter counts "external" (those implemented in a QPU that is neither its control nor target) CZs twice
 countNonLocal :: [Segment] -> Int
 countNonLocal []     = 0
 countNonLocal (s:ss) = nonLocal + countNonLocal ss

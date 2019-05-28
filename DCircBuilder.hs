@@ -64,13 +64,13 @@ buildCircuitRec nWires bindings segments = case segments of
     teleAt w = QGate "teleport" False [w] [] [] False
 
 distributeGates :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)
-distributeGates gates hypergraph partition = (allocateEbits components gatesWithCZs eDic 0, nWires, nEbits)
+distributeGates gates hypergraph partition = (allocateEbits components gatesWithCZs eDic 0, newWires, newEbits)
   where 
     gatesWithCZs = distributeCZs nonlocal gates partition eDic 0
-    nonlocal = nonLocalCZs partition hypergraph
+    nonlocal = nonLocalCs partition hypergraph
     components = ebitInfo partition nonlocal
-    nEbits = length components `div` 2
-    (nWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
+    newEbits = length components `div` 2
+    (newWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
     addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b) we allocate a new pair of negative wires
 
 distributeCZs :: [NonLocalConnection] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
@@ -116,8 +116,8 @@ ebitInfo partition nonlocal = sort $ disentanglers ++ entanglers
     disentanglers = map (\(_,c,b,n) -> Disentangler (c,b) n) eInfo
     eInfo = nub $ map (\(i,c,w,_,o) -> (i,c,partition M.! w,o)) nonlocal -- This nub makes sure there's only one element per cut between gate positions [i,o]
 
-nonLocalCZs :: Partition -> Hypergraph -> [NonLocalConnection]
-nonLocalCZs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare pos1 pos2) nonlocal
+nonLocalCs :: Partition -> Hypergraph -> [NonLocalConnection]
+nonLocalCs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare pos1 pos2) nonlocal
   where
     nonlocal = filter (\(_,src,snk,_,_) -> partition M.! src /= partition M.! snk) czs
     czs      = foldr (\(i,v,ws,o) cs -> map (\(w,p) -> (i,v,w,p,o)) ws ++ cs) [] hedges

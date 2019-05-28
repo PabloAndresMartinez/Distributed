@@ -16,22 +16,22 @@ import Distributer.HGraphBuilder
 import Distributer.DCircBuilder 
 import Distributer.ColorPrinting
 
-processArgs :: [String] -> (K, Epsilon, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format)
-processArgs []     = (-1, 0.03, 1000, 500, False, Kahypar, "./", GateCount) -- Default values
+processArgs :: [String] -> (K, Size, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format)
+processArgs []     = (-1, -1, 1000, 500, False, Kahypar, "./", GateCount) -- Default values
 processArgs (a:as) = case take 3 a of
-    "-k=" -> (read $ drop 3 a, e, w, m, kT, alg, dir, o)
-    "-e=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o)
-    "-w=" -> (k, e, read $ drop 3 a, m, kT, alg, dir, o)
-    "-m=" -> (k, e, w, read $ drop 3 a, kT, alg, dir, o)
-    "-cc" -> (k, e, w, m, True, alg, dir, o)
-    "-fP" -> (k, e, w, m, kT, Patoh, dir, o)
-    "-d=" -> (k, e, w, m, kT, alg, drop 3 a, o)
+    "-k=" -> (read $ drop 3 a, s, w, m, kT, alg, dir, o)
+    "-s=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o)
+    "-w=" -> (k, s, read $ drop 3 a, m, kT, alg, dir, o)
+    "-m=" -> (k, s, w, read $ drop 3 a, kT, alg, dir, o)
+    "-cc" -> (k, s, w, m, True, alg, dir, o)
+    "-fP" -> (k, s, w, m, kT, Patoh, dir, o)
+    "-d=" -> (k, s, w, m, kT, alg, drop 3 a, o)
     "-o=" -> case find (\(tag,_) -> tag == drop 3 a) format_enum of
-      Just f -> (k, e, w, m, kT, alg, dir, snd f)
+      Just f -> (k, s, w, m, kT, alg, dir, snd f)
       Nothing -> error $ "Option "++a++" not recognised."
     _     -> error $ "Option "++a++" not recognised."
   where
-    (k,e,w,m,kT,alg,dir,o) = processArgs as
+    (k,s,w,m,kT,alg,dir,o) = processArgs as
 
 prepareTempDirectory :: IO ()
 prepareTempDirectory = do 
@@ -44,16 +44,17 @@ main = do
   args <- getArgs
   prepareTempDirectory
   let
-    (cfg_k,cfg_epsilon,cfg_initSegSize,cfg_maxHedgeDist,cfg_keepCCZ,cfg_partAlg,cfg_partDir,cfg_outputAs) = processArgs args
+    (cfg_k,cfg_s,cfg_initSegSize,cfg_maxHedgeDist,cfg_keepCCZ,cfg_partAlg,cfg_partDir,cfg_outputAs) = processArgs args
     (input, shape) = Cfg.circuit
     circ  = prepareCircuit cfg_keepCCZ input shape
     (qin, ((ain,theGates,aout,nWires),namespace), qout) = encapsulate_generic id circ shape
-    segments = partitioner (cfg_k, cfg_epsilon, cfg_initSegSize, cfg_maxHedgeDist, cfg_partAlg, cfg_partDir) nWires theGates
+    nQubits = cfg_k * cfg_s
+    segments = partitioner (cfg_k, cfg_initSegSize, cfg_maxHedgeDist, cfg_partAlg, cfg_partDir) (nQubits,nWires) theGates
     gateCountInput = length theGates
     czsInput = length $ filter isCZ theGates
     (newGates, newWires, nEbits, nTeleports) = buildCircuit nWires (IM.size ain) segments
     newCircuit = unencapsulate_generic (qin, ((ain,newGates,aout,nWires+newWires),namespace), qout)
-    in if cfg_k < 2 then putStrLn "You must indicate a number of partitions larger than one; ./Main -k=2" >> putStrLn "" else do
+    in if cfg_k < 2 || cfg_s < 1 then putStrLn "You must indicate the number of QPUs (k > 1) and their workspace qubit capacity (s > 0); example ./Main -k=2 -s=4" >> putStrLn "" else do
       putStrLn $ ""
       putStrLn $ "Original circuit:"
       print_generic cfg_outputAs input shape
@@ -75,5 +76,5 @@ main = do
       putStrLn $ ""
       putStrLn $ "Circuit: "++Cfg.circuit_name
       putStrLn $ "Extensions: " ++ if cfg_keepCCZ then "KeepCCZ" else "N/A"
-      putStrLn $ "k = "++show cfg_k++"; epsilon = "++showFFloat (Just 2) cfg_epsilon ""
+      putStrLn $ "#QPUs = "++show cfg_k++"; QPU_size = "++show cfg_s
       putStrLn $ "initSegSize = "++show cfg_initSegSize++"; maxHedgeDist = "++show cfg_maxHedgeDist
