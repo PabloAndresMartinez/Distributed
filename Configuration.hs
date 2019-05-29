@@ -1,8 +1,5 @@
 module Distributer.Configuration where
 
-import Distributer.Examples
-import Distributer.Input
-
 epsilon = "0.01"
 
 cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used

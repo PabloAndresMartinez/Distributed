@@ -1,5 +1,3 @@
-module Distributer.Examples where
-
 import Quipper
 import Quipper.Generic
 import Quipper.Monad
@@ -25,6 +23,34 @@ import qualified Algorithms.TF.Definitions as TFDef
 import qualified Algorithms.TF.Oracle as TFOrac
 import qualified Algorithms.USV.USV as USV
 import qualified Algorithms.USV.Definitions as USVDef
+
+import Quipper.Printing
+import System.Environment
+
+main = do
+  circName : extraArgs <- getArgs
+  case circName of
+    "qft"          -> uncurry (print_generic ASCII) $ qft (read $ head extraArgs) 
+    "bfWalk"       -> uncurry (print_generic ASCII) $ bfWalk
+    "bwt"          -> uncurry (print_generic ASCII) $ bwt
+    "gse"          -> uncurry (print_generic ASCII) $ gse
+    "tf"           -> uncurry (print_generic ASCII) $ tf
+    "usvR"         -> uncurry (print_generic ASCII) $ usvR
+    "usvF"         -> uncurry (print_generic ASCII) $ usvF
+    "usvG"         -> uncurry (print_generic ASCII) $ usvG
+    "usvH"         -> uncurry (print_generic ASCII) $ usvH
+    "simple"       -> uncurry (print_generic ASCII) $ simple
+    "simple2"      -> uncurry (print_generic ASCII) $ simple2
+    "simple3"      -> uncurry (print_generic ASCII) $ simple3
+    "simple4"      -> uncurry (print_generic ASCII) $ simple4
+    "pull"         -> uncurry (print_generic ASCII) $ pull
+    "pull2"        -> uncurry (print_generic ASCII) $ pull2
+    "pull3"        -> uncurry (print_generic ASCII) $ pull3
+    "interesting"  -> uncurry (print_generic ASCII) $ interesting
+    "interesting2" -> uncurry (print_generic ASCII) $ interesting2
+    "interesting3" -> uncurry (print_generic ASCII) $ interesting3
+    "interesting4" -> uncurry (print_generic ASCII) $ interesting4
+    "withToffolis" -> uncurry (print_generic ASCII) $ withToffolis
 
 
 -- ## Custom circuits ## --
