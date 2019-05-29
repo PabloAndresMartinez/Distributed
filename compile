@@ -1,7 +1,6 @@
 #!/bin/bash
 
 quipper -O2 Main.hs Configuration.hs Common.hs Preparation.hs Partitioner.hs HGraphBuilder.hs DCircBuilder.hs ColorPrinting.hs
-quipper Examples.hs
 
 rm *o
 rm *hi

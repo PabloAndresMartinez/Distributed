@@ -3,7 +3,8 @@ module Distributer.Partitioner where
 import qualified Data.Map as M
 import Data.List (nub, sort, sortBy, group, (\\))
 import Numeric (showFFloat)
-import qualified HSH as HSH
+import System.Process
+import System.Directory
 import System.IO.Unsafe (unsafePerformIO)
 
 import Quipper
@@ -140,10 +141,12 @@ getPartitionIO (k, algorithm, partDir) fileData id = let
     partFile = "temp/part_"++id++".hgr"
     script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++Cfg.epsilon++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
     script Patoh = partDir++"PaToH "++hypFile++" "++show k++" FI="++Cfg.epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
+    waitForFile file = doesFileExist file >>= \yes -> if yes then return () else waitForFile file
   in do 
     writeFile hypFile $ fileData 
-    HSH.run $ script algorithm :: IO () 
-    HSH.run $ "mv "++hypFile++".part* "++partFile :: IO ()
+    waitForFile hypFile
+    createProcess $ shell $ script algorithm++"; mv "++hypFile++".part* "++partFile
+    waitForFile partFile
     putStrLn id
     readFile partFile
 

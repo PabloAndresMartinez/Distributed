@@ -51,6 +51,7 @@ main = do
     "interesting3" -> uncurry (print_generic ASCII) $ interesting3
     "interesting4" -> uncurry (print_generic ASCII) $ interesting4
     "withToffolis" -> uncurry (print_generic ASCII) $ withToffolis
+    _ -> error $ "There is no circuit example with name "++circName++"."
 
 
 -- ## Custom circuits ## --
