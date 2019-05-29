@@ -71,9 +71,10 @@ computeNewSeams nWires (s:ss) = (gs,hyp,part,seam',id) : computeNewSeams nWires 
 --    The minimum of the wireHedges/totalHedges ratio between hyp1 and hyp2 of each wire is taken, 
 --      because that is a good estimate of the added cost if the teleportation is not applied
 getRho :: Int -> Segment -> Segment -> Rational
-getRho nWires (_, hyp1, part1,_,_) (_, hyp2, part2,_,_) = sum $ map (\w -> min (weight w hyp1) (weight w hyp2)) $ filterStatic [0..nWires-1]
+getRho nWires (_, hyp1, part1,_,_) (_, hyp2, part2,_,_) = sum $ map chooseWeight $ filterStatic [0..nWires-1]
   where
     filterStatic = filter (\w -> part1 M.! w /= part2 M.! w)
+    chooseWeight w = if hedges w hyp1 < hedges w hyp2 then weight w hyp1 else weight w hyp2
     weight wire hyp = toRational (hedges wire hyp) / toRational (totalHs hyp)
     hedges wire hyp = if M.member wire hyp then length $ hyp M.! wire else 0
     totalHs hyp = M.foldr (\hs n -> length hs + n) 0 hyp
