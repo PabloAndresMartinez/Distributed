@@ -20,22 +20,23 @@ import Distributer.HGraphBuilder
 import Distributer.DCircBuilder 
 import Distributer.ColorPrinting
 
-processArgs :: [String] -> (K, Size, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format)
-processArgs []     = (-1, -1, 1000, 500, False, Kahypar, "./", GateCount) -- Default values
+processArgs :: [String] -> (K, Size, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format, SaveTrace)
+processArgs []     = (-1, -1, 1000, 500, False, Kahypar, "./", GateCount, False) -- Default values
 processArgs (a:as) = case take 3 a of
-    "-k=" -> (read $ drop 3 a, s, w, m, kT, alg, dir, o)
-    "-s=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o)
-    "-w=" -> (k, s, read $ drop 3 a, m, kT, alg, dir, o)
-    "-m=" -> (k, s, w, read $ drop 3 a, kT, alg, dir, o)
-    "-cc" -> (k, s, w, m, True, alg, dir, o)
-    "-fP" -> (k, s, w, m, kT, Patoh, dir, o)
-    "-d=" -> (k, s, w, m, kT, alg, drop 3 a, o)
+    "-k=" -> (read $ drop 3 a, s, w, m, kT, alg, dir, o, sT)
+    "-s=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o, sT)
+    "-w=" -> (k, s, read $ drop 3 a, m, kT, alg, dir, o, sT)
+    "-m=" -> (k, s, w, read $ drop 3 a, kT, alg, dir, o, sT)
+    "-cc" -> (k, s, w, m, True, alg, dir, o, sT)
+    "-fp" -> (k, s, w, m, kT, Patoh, dir, o, sT)
+    "-d=" -> (k, s, w, m, kT, alg, drop 3 a, o, sT)
     "-o=" -> case find (\(tag,_) -> tag == drop 3 a) format_enum of
-      Just f -> (k, s, w, m, kT, alg, dir, snd f)
+      Just f -> (k, s, w, m, kT, alg, dir, snd f, sT)
       Nothing -> error $ "Option "++a++" not recognised."
+    "-st" -> (k, s, w, m, kT, alg, dir, o, True)
     _     -> error $ "Option "++a++" not recognised."
   where
-    (k,s,w,m,kT,alg,dir,o) = processArgs as
+    (k,s,w,m,kT,alg,dir,o,sT) = processArgs as
 
 prepareTempDirectory :: IO ()
 prepareTempDirectory = do 
@@ -49,12 +50,12 @@ main = do
   circASCII <- hGetContents stdin
   prepareTempDirectory
   let
-    (cfg_k,cfg_s,cfg_initSegSize,cfg_maxHedgeDist,cfg_keepCCZ,cfg_partAlg,cfg_partDir,cfg_outputAs) = processArgs args
+    (cfg_k,cfg_s,cfg_initSegSize,cfg_maxHedgeDist,cfg_keepCCZ,cfg_partAlg,cfg_partDir,cfg_outputAs,cfg_saveTrace) = processArgs args
     (shape, input) = parse_circuit circASCII
     circ  = prepareCircuit cfg_keepCCZ input shape
     (qin, ((ain,theGates,aout,nWires),namespace), qout) = encapsulate_generic id circ shape
     nQubits = cfg_k * cfg_s
-    segments = partitioner (cfg_k, cfg_initSegSize, cfg_maxHedgeDist, cfg_partAlg, cfg_partDir) (nQubits,nWires) theGates
+    segments = partitioner (cfg_k, cfg_initSegSize, cfg_maxHedgeDist, cfg_partAlg, cfg_partDir, cfg_saveTrace) (nQubits,nWires) theGates
     gateCountInput = length theGates
     czsInput = length $ filter isCZ theGates
     (newGates, newWires, nEbits, nTeleports) = buildCircuit nWires (IM.size ain) segments

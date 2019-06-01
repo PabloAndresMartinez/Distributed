@@ -16,11 +16,11 @@ import Distributer.HGraphBuilder
 
 -- Input is the circuit and the number of wires
 -- Output is the list of partitions, indicating the position at which they end and the 'sub'-hypergraph they correspond to.
-partitioner :: (K,InitSegSize,MaxHedgeDist,PartAlg,PartDir) -> (Int,Int) -> [Gate] -> [Segment]
-partitioner (k,w,m,alg,dir) (nQubits,nWires) circ = mergeSeams toHypergraph toPartition k nWires $ ignoreLastSeam $ initialSegments circ 0
+partitioner :: (K,InitSegSize,MaxHedgeDist,PartAlg,PartDir,SaveTrace) -> (Int,Int) -> [Gate] -> [Segment]
+partitioner (k,w,m,alg,dir,sT) (nQubits,nWires) circ = mergeSeams toHypergraph toPartition k nWires $ ignoreLastSeam $ initialSegments circ 0
   where    
     toHypergraph = buildHyp m nQubits
-    toPartition = getPartition (k,alg,dir) nQubits
+    toPartition = getPartition (k,alg,dir,sT) nQubits
     initialSegments []    _ = []
     initialSegments gates n = segmentOf thisGates n : initialSegments nextGates (n+1)
       where 
@@ -126,18 +126,18 @@ findValleyRec (s:ss) pos (Just m) = case seamOf $ head ss of  -- The minimum is 
   where (Value rho) = seamOf s
 
 -- Calls a third party software to solve the hypergraph partitioning problem
-getPartition :: (K,PartAlg,PartDir) -> Int -> Hypergraph -> String -> Partition
-getPartition (k,algorithm,partDir) nQubits hypergraph id = if head fileData == '0' 
+getPartition :: (K,PartAlg,PartDir,SaveTrace) -> Int -> Hypergraph -> String -> Partition
+getPartition (k,algorithm,partDir,saveTrace) nQubits hypergraph id = if head fileData == '0' 
     then error $ "The circuit can be simplified to only use 1-qubit gates. Partitioning is irrelevant."
     else partition
   where
     (fileData, hypHEdges, hypVertices) = hypToString algorithm hypergraph nQubits
-    hypPart = unsafePerformIO $ getPartitionIO (k, algorithm, partDir) fileData id
+    hypPart = unsafePerformIO $ getPartitionIO (k, algorithm, partDir, saveTrace) fileData id
     partList = map read (concat . map words . lines $ hypPart)
     partition = M.fromList $ zip [0..] partList
 
-getPartitionIO :: (K,PartAlg,PartDir) -> String -> String -> IO String
-getPartitionIO (k, algorithm, partDir) fileData id = let 
+getPartitionIO :: (K,PartAlg,PartDir,SaveTrace) -> String -> String -> IO String
+getPartitionIO (k, algorithm, partDir, saveTrace) fileData id = let 
     hypFile  = "temp/hyp_"++id++".hgr"
     partFile = "temp/part_"++id++".hgr"
     script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++Cfg.epsilon++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
@@ -149,7 +149,9 @@ getPartitionIO (k, algorithm, partDir) fileData id = let
     createProcess $ shell $ script algorithm++"; mv "++hypFile++".part* "++partFile
     waitForFile partFile
     putStrLn id
-    readFile partFile
+    output <- readFile partFile
+    if saveTrace then return () else removeFile hypFile >> removeFile partFile
+    return output
 
 -- ## Heuristic search to match partitions ## --
 
