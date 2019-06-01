@@ -34,7 +34,7 @@ mergeSeams :: ([Gate] -> Hypergraph) -> (Hypergraph -> String -> Partition) -> K
 mergeSeams toHypergraph toPartition k nWires segments = if allStop then segments else segments''
   where
     segments'' = mergeSeams toHypergraph toPartition k nWires segments'
-    segments' = ignoreLastSeam $ mergeMin toHypergraph toPartition nWires $ computeNewSeams nWires $ matchSegments nWires idMatching segments
+    segments' = ignoreLastSeam $ mergeMin toHypergraph toPartition nWires $ computeNewSeams nWires $ matchSegments k nWires idMatching segments
     allStop = foldr (&&) True $ map (\(_,_,_,seam,_) -> isStop seam) segments
     idMatching = M.fromList [(b,b) | b <- [0..k-1]]
 
@@ -43,9 +43,9 @@ ignoreLastSeam :: [Segment] -> [Segment]
 ignoreLastSeam (s:[]) = (\(gs,hyp,part,_,id) -> [(gs,hyp,part,Stop,id)]) s 
 ignoreLastSeam (s:ss) = s : ignoreLastSeam ss
 
-matchSegments :: Int -> Matching -> [Segment] -> [Segment]
-matchSegments nWires prevMatching (s:[]) = updWith prevMatching s : []
-matchSegments nWires prevMatching (s:ss) = s' : matchSegments nWires matching ss 
+matchSegments :: K -> Int -> Matching -> [Segment] -> [Segment]
+matchSegments k nWires prevMatching (s:[]) = updWith prevMatching s : []
+matchSegments k nWires prevMatching (s:ss) = s' : matchSegments k nWires matching ss 
   where
     s' = updWith prevMatching s -- Rename blocks of this segment's partition so they optimally match with those from the previous segment
     matching = case thisSeam of -- Only compute matchings when necessary (i.e. when this segment or the next one have changed)
@@ -53,7 +53,7 @@ matchSegments nWires prevMatching (s:ss) = s' : matchSegments nWires matching ss
       _       -> case nextSeam of
         Compute -> updatedMatching
         _       -> prevMatching 
-    updatedMatching = matchPartitions nextPart thisPart nWires -- This gives a matching from blocks of nextPart to blocks of thisPart
+    updatedMatching = matchPartitions nextPart thisPart k nWires -- This gives a matching from blocks of nextPart to blocks of thisPart
     (_,_,thisPart, thisSeam,_) = s' -- Note that it is important that the prevMatching has already been applied to the segment
     (_,_,nextPart, nextSeam,_) = head ss
 
@@ -161,17 +161,15 @@ type HCost      = M.Map Block Int
 
 -- This returns a matching map from blocks of 'part1' to blocks of 'part2' so their circuits can be joined with the minimum number of teleportations.
 --    For an output 'matching', 'part2' should be updated to 'M.map (\b -> matching M.! b) part2'
-matchPartitions :: Partition -> Partition -> Int -> Matching
-matchPartitions part1 part2 nWires = matchPartitionsRec blocks1 part2' heuristic (M.keys blocks1) initial
+matchPartitions :: Partition -> Partition -> K -> Int -> Matching
+matchPartitions part1 part2 k nWires = matchPartitionsRec blocks1 part2' heuristic (M.keys blocks1) initial
   where
     initial = [(M.empty, M.foldr (+) 0 heuristic)]
     heuristic = heuristicCost blocks1 part2'
     part1' = M.take nWires part1 -- Take only the wire vertices
     part2' = M.take nWires part2 -- Take only the wire vertices
-    blocks1 = M.foldrWithKey (\w b m -> M.alter (appendIt w) b m) M.empty part1'
-    appendIt w l = case l of 
-      Nothing -> Just $ w:[]
-      Just ws -> Just $ w:ws
+    blocks1 = M.foldrWithKey (\w b m -> M.alter (appendIt w) b m) (M.fromList [(b,[]) | b <- [0..k-1]]) part1'
+    appendIt w (Just ws) = Just (w:ws)
 
 -- Thanks to lazyness, the recursive search is actually only applied on the best candidates
 matchPartitionsRec :: Partition' -> Partition -> HCost -> [Block] -> [(Matching,Int)] -> Matching
@@ -192,6 +190,6 @@ matchPartitionsRec blocks1 part2 heuristic allBlocks matchings = if M.size (fst 
 heuristicCost :: Partition' -> Partition -> HCost
 heuristicCost blocks1 part2 = M.mapWithKey hCostFor blocks1
   where
-    hCostFor b ws = length ws - (minimum $ map length $ (group . sort) $ map (part2 M.!) ws)
+    hCostFor b ws = if null ws then 0 else length ws - (minimum $ map length $ (group . sort) $ map (part2 M.!) ws)
    
 
