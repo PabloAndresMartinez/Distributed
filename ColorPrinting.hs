@@ -309,16 +309,16 @@ render_wire _           x0 y0 x1 y1 | x0 == x1 && y0 == y1 = return ()
 render_wire (c, dashed) x0 y0 x1 y1 = draw_subroutine alt $ do
   if dashed 
     then foldr (\(x,w) d -> background x w >> d) (fill c) (dashes x0 x1)
-    else background x0 (x1-x0) >> fill c
+    else rectangle x0 (y0-0.5) (x1-x0) 1 >> fill c
   moveto x0 y0
   lineto x1 y1
   stroke
   where
-    background x w = rectangle x (y0-0.5) w 1
+    background x w = moveto x bot >> lineto (x+w) bot >> lineto (x+w+0.25) top >> lineto (x+0.25) top >> lineto x bot
     dashes a b = let a' = a+dashWidth+dashSep in if a' < b
       then (a, dashWidth) : dashes a' b
       else (a, b-a) : []
-    dashWidth = 1.75; dashSep = 0.25
+    dashWidth = 1.75; dashSep = 0.25; rombShift = 0.25; bot = y0-0.5; top=y0+0.5
     alt = [custom_ps $ printf "%f %f %f %f line\n" x0 y0 x1 y1]
 
 -- | @'render_dot' x y@: Draw a filled control dot at (/x/,/y/).

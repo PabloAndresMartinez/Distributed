@@ -10,8 +10,8 @@ import Quipper.Generic
 import Distributer.Common
 
 type NonLocalConnection = (Int,Wire,Wire,Int,Int) -- (i,v,w,p,o); i (o) initial (final) pos of hedge it belongs to, v and w are the wires the CZ acts on, p its position
-type EDic = M.Map (Wire,Block) Wire -- sourceE := eDic ! (ctrl,btarget). sinkE := sourceE-1. Both are negative integers
-data EbitComponent = Entangler (Wire,Block) Int | Disentangler (Wire,Block) Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget,hType) pos
+type EDic = M.Map (Wire,Block) Wire -- sourceE := eDic ! (ctrl, bctrl, btarget). sinkE := sourceE-1. Both are negative integers
+data EbitComponent = Entangler (Wire,Block) Block Int | Disentangler (Wire,Block) Block Int deriving (Show,Eq) -- (Dis)Entangler (ctrl,btarget) bctrl pos
 type BindingFlags = M.Map Wire Bool
 
 instance Ord EbitComponent where
@@ -22,16 +22,16 @@ instance Ord EbitComponent where
       EQ -> compare (getConnections c1) (getConnections c2)
 
 isEntangler :: EbitComponent -> Bool
-isEntangler (Entangler    _ _) = True
-isEntangler (Disentangler _ _) = False
+isEntangler (Entangler    _ _ _) = True
+isEntangler (Disentangler _ _ _) = False
 
 position :: EbitComponent -> Int
-position (Entangler    _ n) = n
-position (Disentangler _ n) = n
+position (Entangler    _ _ n) = n
+position (Disentangler _ _ n) = n
 
-getConnections :: EbitComponent -> (Wire,Block)
-getConnections (Entangler    ws _) = ws
-getConnections (Disentangler ws _) = ws
+getConnections :: EbitComponent -> ((Wire,Block),Block)
+getConnections (Entangler    ws bs _) = (ws,bs)
+getConnections (Disentangler ws bs _) = (ws,bs)
 
 updBindings :: [Gate] -> BindingFlags -> BindingFlags
 updBindings []     bindings = bindings
@@ -71,7 +71,7 @@ distributeGates gates hypergraph partition = (allocateEbits components gatesWith
     components = ebitInfo partition nonlocal
     newEbits = length components `div` 2
     (newWires,eDic) = foldr addToDic (0,M.empty) $ filter isEntangler components
-    addToDic (Entangler key _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b) we allocate a new pair of negative wires
+    addToDic (Entangler key _ _) (w,dic) = if key `M.member` dic then (w,dic) else (w+2, M.insert key (-w-1) dic) -- For each new (c,b) we allocate a new pair of negative wires
 
 distributeCZs :: [NonLocalConnection] -> [Gate] -> Partition -> EDic -> Int -> [Gate]
 distributeCZs []     gs partition _    prev = gs
@@ -99,21 +99,22 @@ allocateEbits (c:cs) gates eDic prev = gatesInit ++ component ++ allocateEbits c
   where
     gatesInit = take (n-prev) gates
     gatesTail = drop (n-prev) gates
-    ((source,bsink), n) = (getConnections c, position c)
+    n = position c
+    ((source,bsink), bsource) = getConnections c
     sourceE = eDic M.! (source, bsink) -- eBit wire for hyperedge 'source' (i.e. control if control type, target otherwise)
     sinkE = sourceE-1
     component = if isEntangler c
-      then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, CDiscard sourceE]
+      then bell ++ [QGate "not" False [sourceE] [] [Signed source True] False, QMeas sourceE, QGate "X" False [sinkE] [] [Signed sourceE True] False, Comment "QPU_allocation" False [(sourceE,"-1 ebit")], CDiscard sourceE]
       else [QGate "H" False [sinkE] [] [] False, QMeas sinkE, QGate "Z" False [source] [] [Signed sinkE True] False, Comment "QPU_allocation" False [(sinkE,"-1 ebit")], CDiscard sinkE]
-    bell = [QInit False sinkE False,  QInit False sourceE False, Comment "QPU_allocation" False [(sinkE, show bsink ++ " ebit"), (sourceE, "-1 ebit")], QGate "bell" False [sinkE,sourceE] [] [] False]
+    bell = [QInit False sinkE False,  QInit False sourceE False, Comment "QPU_allocation" False [(sinkE, show bsink ++ " ebit"), (sourceE, show bsource ++ " ebit")], QGate "bell" False [sinkE,sourceE] [] [] False]
     -- explicitBell = [QInit False sinkE False, QInit False sourceE False, QGate "H" False [sourceE] [] [] False, QGate "not" False [sinkE] [] [Signed sourceE True] False]
 
 -- Produces an ordered list of the components to realise the required ebits (cat-ent/disentanglers). The order is given by ascending position in the circuit.
 ebitInfo :: Partition -> [NonLocalConnection] -> [EbitComponent]
 ebitInfo partition nonlocal = sort $ disentanglers ++ entanglers
   where
-    entanglers    = map (\(n,c,b,_) -> Entangler    (c,b) n) eInfo
-    disentanglers = map (\(_,c,b,n) -> Disentangler (c,b) n) eInfo
+    entanglers    = map (\(n,c,b,_) -> Entangler    (c,b) (partition M.! c) n) eInfo
+    disentanglers = map (\(_,c,b,n) -> Disentangler (c,b) (partition M.! c) n) eInfo
     eInfo = nub $ map (\(i,c,w,_,o) -> (i,c,partition M.! w,o)) nonlocal -- This nub makes sure there's only one element per cut between gate positions [i,o]
 
 nonLocalCs :: Partition -> Hypergraph -> [NonLocalConnection]

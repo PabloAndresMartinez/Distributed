@@ -14,12 +14,14 @@ buildHyp maxHedgeDist nQubits gs = M.map splitLongHedges $ M.map (filter (\(_,ws
     hyp = toPositive $ buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
     toPositive = M.map (map (\(i,ws,o) -> (i,map (\(w,p) -> (nQubits-w-1,p)) ws,o)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
     splitLongHedges []            = []
-    splitLongHedges ((i,ws,o):hs) = if maxHedgeDist < o - i
-      then let x = i + (o - i) `div` 2 in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
+    splitLongHedges ((i,ws,o):hs) = if maxHedgeDist < length ws
+      then let x = splitPos ws `div` 2 in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
       else (i,ws,o) : splitLongHedges hs
+    splitPos ws = snd $ head $ drop (length ws `div` 2) ws
     before x (_,p) = p < x
 
 -- The hypergraph is built from the end of the circuit to its start
+--  The CZ within the hyperedge and the hyperedges themselves are ordered from earliest in the circuit to latest.
 buildHypRec :: [Gate] -> Int -> Int -> Hypergraph
 buildHypRec []     _   _  = M.empty
 buildHypRec (g:gs) pos czVertex = if isClassical g then buildHypRec gs (pos+1) czVertex
