@@ -250,9 +250,11 @@ bwt_C _ = BWT.qrwbwt oracle s dt
     dt = pi/180 -- timestep size
     oracle = BWT.oracle_orthodox f g -- the default oracle construction for the two given bitstrings
       where
-        n = 10 -- tree height (input bitstring length)
-        f = take n (True : False : f) -- a function
-        g = take n (False : True : g) -- another function
+        n = 200 -- tree height (input bitstring length) -- CHANGED FROM 5
+        f = take n $ rndList (mkStdGen 1234) -- take n (True : False : f) -- a function
+        g = take n $ rndList (mkStdGen 4321) -- take n (False : True : g) -- another function
+        rndList g = (\(a,g) -> even a : rndList g) (next g)
+
         
 -- GSE full circuit with default options
 --    Needs to be IO because it loads from some files    
@@ -260,9 +262,9 @@ gse :: (() -> Circ [Bit], ())
 gse = (unsafePerformIO gse_C, ())
 gse_C :: IO (() -> Circ [Bit])
 gse_C = let 
-  b        = 3 -- The number of precision qubits
-  m        = 8 -- The number of basis functions
-  occupied = 4 -- The number of occupied orbitals
+  b        = 200 -- The number of precision qubits -- FROM 3
+  m        = 4 -- The number of basis functions -- FROM 4
+  occupied = 2 -- The number of occupied orbitals -- FROM 2
   delta_e  = 6.5536 -- Energy range
   tau = 2*pi / delta_e -- The Hamiltonian scaling parameter
   e_max    = -3876.941 -- Maximum energy
@@ -271,7 +273,7 @@ gse_C = let
   -- Integral data hpq and hpqrs:
   h1_file  = "h_1e_ascii"
   h2_file  = "h_2e_ascii"
-  datadir  = "gseData/"
+  datadir  = "../../../gseData/"
   in do
     gse_data <- GSEData.load_gse_data m (datadir++h1_file) (datadir++h2_file)
     return $ (\_ -> GSE.gse b m occupied gse_data tau e_max nfun orthodox)
