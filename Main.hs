@@ -65,7 +65,7 @@ main = do
       _ -> print_generic cfg_outputAs c s
     in if cfg_k < 2 || cfg_s < 1 
       then putStrLn "You must indicate the number of QPUs (k > 1) and their workspace qubit capacity (s > 0); example ./Main -k=2 -s=4" >> putStrLn "" 
-      else if nQubits < nWires then putStrLn "There are not enough qubits to run the circuit; increase k." >> putStrLn "Z" else do
+      else if nQubits < nWires then putStrLn ("There are not enough qubits to run the circuit. Qubits required: "++show nWires++".") else do
         putStrLn $ ""
         putStrLn $ "Original circuit:"
         printIt input shape
