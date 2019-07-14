@@ -21,7 +21,7 @@ import Distributer.DCircBuilder
 import Distributer.ColorPrinting
 
 processArgs :: [String] -> (K, Size, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format, SaveTrace)
-processArgs []     = (-1, -1, 1000, 500, False, Kahypar, "./", GateCount, False) -- Default values
+processArgs []     = (-1, -1, 1000, 100, False, Kahypar, "./", GateCount, False) -- Default values
 processArgs (a:as) = case take 3 a of
     "-k=" -> (read $ drop 3 a, s, w, m, kT, alg, dir, o, sT)
     "-s=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o, sT)
