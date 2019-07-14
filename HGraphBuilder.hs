@@ -9,14 +9,16 @@ import Quipper.Circuit
 import Distributer.Common
 
 buildHyp :: MaxHedgeDist -> Int -> [Gate] -> Hypergraph
-buildHyp maxHedgeDist nQubits gs = M.map splitLongHedges $ M.map (filter (\(_,ws,_) -> not $ null ws)) hyp -- Remove all singleton (unconnected) hyperedges
+buildHyp maxHedgeDist nQubits gs = M.map (filter (\(_,ws,_) -> not $ null ws)) $ M.map splitLongHedges hyp -- Remove all singleton (unconnected) hyperedges
   where
     hyp = toPositive $ buildHypRec gs 0 0 -- Build the hypergraph by exploring the gates recursively
     toPositive = M.map (map (\(i,ws,o) -> (i,map (\(w,p) -> (nQubits-w-1,p)) ws,o)))  -- Convert all negative auxiliary wires to positive ones, so KaHyPart does not explode
     splitLongHedges []            = []
-    splitLongHedges ((i,ws,o):hs) = if maxHedgeDist < (o-i)
-      then let x = splitPos (i,o) in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
-      else (i,ws,o) : splitLongHedges hs
+    splitLongHedges ((i,ws,o):hs) = if maxHedgeDist == 1 -- Case where the user is asking to do standard graph partitioning
+      then map (\(w,p) -> (p,[(w,p)],p+1)) ws ++ splitLongHedges hs -- This is more efficient than the algorithm below (only usable for this case)
+      else if maxHedgeDist < (o-i)
+        then let x = splitPos (i,o) in splitLongHedges ((i,takeWhile (before x) ws,x) : (x,dropWhile (before x) ws,o) : hs)
+        else (i,ws,o) : splitLongHedges hs
     splitPos (i,o) = i + ((o-i) `div` 2)
     before x (_,p) = p < x
 
