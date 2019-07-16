@@ -262,7 +262,7 @@ gse :: (() -> Circ [Bit], ())
 gse = (unsafePerformIO gse_C, ())
 gse_C :: IO (() -> Circ [Bit])
 gse_C = let 
-  b        = 200 -- The number of precision qubits -- FROM 3
+  b        = 150 -- The number of precision qubits -- FROM 3
   m        = 4 -- The number of basis functions -- FROM 4
   occupied = 2 -- The number of occupied orbitals -- FROM 2
   delta_e  = 6.5536 -- Energy range
