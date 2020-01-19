@@ -1,30 +1,29 @@
 import Quipper
-import Quipper.Generic
-import Quipper.Monad
-import Quipper.QData
-import Quipper.Circuit
-import QuipperLib.Decompose
-import QuipperLib.Arith
-import Algorithms.BF.BooleanFormula
+import Quipper.Internal.Generic
+import Quipper.Internal.Monad
+import Quipper.Internal.QData
+import Quipper.Internal.Circuit
+import Quipper.Libraries.Decompose
+import Quipper.Libraries.Arith
 import System.Random
-import Libraries.RandomSource
-import Libraries.Sampling
-import QuipperLib.Unboxing
+import Quipper.Utils.RandomSource
+import Quipper.Utils.Sampling
+import Quipper.Libraries.Unboxing
 import Data.IntMap.Strict (IntMap)
 import System.IO.Unsafe (unsafePerformIO)
 
-import qualified QuipperLib.QFT as QFT
-import qualified Algorithms.BF.BooleanFormula as BF
-import qualified Algorithms.BWT.BWT as BWT
-import qualified Algorithms.GSE.GSE as GSE
-import qualified Algorithms.GSE.GSEData as GSEData
-import qualified Algorithms.TF.QWTFP as TF
-import qualified Algorithms.TF.Definitions as TFDef
-import qualified Algorithms.TF.Oracle as TFOrac
-import qualified Algorithms.USV.USV as USV
-import qualified Algorithms.USV.Definitions as USVDef
+import qualified Quipper.Libraries.QFT as QFT
+import qualified Quipper.Algorithms.BF.BooleanFormula as BF
+import qualified Quipper.Algorithms.BWT.BWT as BWT
+import qualified Quipper.Algorithms.GSE.GSE as GSE
+import qualified Quipper.Algorithms.GSE.GSEData as GSEData
+import qualified Quipper.Algorithms.TF.QWTFP as TF
+import qualified Quipper.Algorithms.TF.Definitions as TFDef
+import qualified Quipper.Algorithms.TF.Oracle as TFOrac
+import qualified Quipper.Algorithms.USV.USV as USV
+import qualified Quipper.Algorithms.USV.Definitions as USVDef
 
-import Quipper.Printing
+import Quipper.Internal.Printing
 import System.Environment
 
 main = do

@@ -4,11 +4,11 @@ import qualified Data.Map as M
 import System.Random
 
 import Quipper
-import Quipper.Generic
-import Quipper.Circuit
-import QuipperLib.Decompose
-import QuipperLib.Decompose.CliffordT
-import QuipperLib.Unboxing
+import Quipper.Internal.Generic
+import Quipper.Internal.Circuit
+import Quipper.Libraries.Decompose
+import Quipper.Libraries.Decompose.CliffordT
+import Quipper.Libraries.Unboxing
 
 import Distributer.Common
 

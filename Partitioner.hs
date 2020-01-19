@@ -8,7 +8,7 @@ import System.Directory
 import System.IO.Unsafe (unsafePerformIO)
 
 import Quipper
-import Quipper.Circuit
+import Quipper.Internal.Circuit
 
 import qualified Distributer.Configuration as Cfg
 import Distributer.Common
@@ -166,8 +166,8 @@ matchPartitions part1 part2 k nWires = matchPartitionsRec blocks1 part2' heurist
   where
     initial = [(M.empty, M.foldr (+) 0 heuristic)]
     heuristic = heuristicCost blocks1 part2'
-    part1' = M.take nWires part1 -- Take only the wire vertices
-    part2' = M.take nWires part2 -- Take only the wire vertices
+    part1' = M.filter (< nWires) part1 -- Take only the wire vertices
+    part2' = M.filter (< nWires) part2 -- Take only the wire vertices
     blocks1 = M.foldrWithKey (\w b m -> M.alter (appendIt w) b m) (M.fromList [(b,[]) | b <- [0..k-1]]) part1'
     appendIt w (Just ws) = Just (w:ws)
 

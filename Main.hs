@@ -8,10 +8,10 @@ import System.Directory
 import System.Environment
 import System.IO
 
-import Quipper.Circuit
-import Quipper.Generic
-import Quipper.Printing
-import QuipperLib.QuipperASCIIParser
+import Quipper.Internal.Circuit
+import Quipper.Internal.Generic
+import Quipper.Internal.Printing
+import Quipper.Libraries.QuipperASCIIParser
 
 import Distributer.Common
 import Distributer.Preparation

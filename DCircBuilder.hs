@@ -4,8 +4,8 @@ import qualified Data.Map as M
 import Data.List (nub, sort, sortBy, (\\))
 
 import Quipper
-import Quipper.Circuit
-import Quipper.Generic
+import Quipper.Internal.Circuit
+import Quipper.Internal.Generic
 
 import Distributer.Common
 
@@ -60,7 +60,7 @@ buildCircuitRec nWires bindings segments = case segments of
     (thisGates, thisHyp, thisPart,_,_) = head segments
     (_,         _,       nextPart,_,_) = head $ tail segments
     bindings' = updBindings thisGates bindings
-    teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> bindings' M.! w && b /= nextPart M.! w) $ M.toList $ M.take nWires thisPart -- Ignore CZ-vertices!
+    teleGates = map (\(w,_) -> teleAt w) $ filter (\(w,b) -> bindings' M.! w && b /= nextPart M.! w) $ take nWires $ M.toList thisPart -- Ignore CZ-vertices!
     teleAt w = QGate "teleport" False [w] [] [] False
 
 distributeGates :: [Gate] -> Hypergraph -> Partition -> ([Gate],Int,Int)

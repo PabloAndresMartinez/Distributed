@@ -4,7 +4,7 @@ import qualified Data.Map as M
 import Data.List (nub)
 
 import Quipper
-import Quipper.Circuit
+import Quipper.Internal.Circuit
 
 -- Parameters
 type K = Int

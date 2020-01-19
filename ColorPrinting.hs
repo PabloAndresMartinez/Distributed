@@ -6,11 +6,11 @@
 module Distributer.ColorPrinting (preview_withColor) where
 
 -- import other Quipper stuff
-import Libraries.Auxiliary
-import Quipper.Circuit
-import Quipper.Generic
-import Quipper.Monad
-import Quipper.QData
+import Quipper.Utils.Auxiliary
+import Quipper.Internal.Circuit
+import Quipper.Internal.Generic
+import Quipper.Internal.Monad
+import Quipper.Internal.QData
 
 -- import other stuff
 import Prelude
