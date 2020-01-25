@@ -1,0 +1,10 @@
+Inputs: 0:Qbit, 1:Qbit, 2:Qbit, 3:Qbit
+QGate["not"](3) with controls=[+0]
+QGate["not"](1) with controls=[+2]
+QGate["not"](3) with controls=[+2]
+QGate["T"](1)
+QGate["H"](2)
+QGate["not"](1) with controls=[+0]
+QGate["not"](0) with controls=[+2]
+Outputs: 0:Qbit, 1:Qbit, 2:Qbit, 3:Qbit
+

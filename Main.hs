@@ -23,6 +23,12 @@ import Distributer.ColorPrinting
 processArgs :: [String] -> (K, Size, InitSegSize, MaxHedgeDist, KeepCCZ, PartAlg, PartDir, Format, SaveTrace)
 processArgs []     = (-1, -1, 1000, 100, False, Kahypar, "./", GateCount, False) -- Default values
 processArgs (a:as) = case take 3 a of
+    "--h" -> error $  "\n\n\nThis is a list of all available options. Use cat <circuit_file> | ./Main [options].\n"++
+                      "\t -k= Distribute across given number of QPUs.\n"++
+                      "\t -s= Each QPU has the given number of qbits.\n"++
+                      "\t -cc Assume QPUs can execute CCZ gates.\n"++
+                      "\t -o= Choose between different output formats: preview, eps, pdf, ascii. Default: gatecount.\n"++
+                      "\n\n"
     "-k=" -> (read $ drop 3 a, s, w, m, kT, alg, dir, o, sT)
     "-s=" -> (k, read $ drop 3 a, w, m, kT, alg, dir, o, sT)
     "-w=" -> (k, s, read $ drop 3 a, m, kT, alg, dir, o, sT)
