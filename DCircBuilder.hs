@@ -127,13 +127,13 @@ nonLocalCs partition hyp = sortBy (\(_,_,_,pos1,_) (_,_,_,pos2,_) -> compare pos
 addPartComments :: BindingFlags -> Partition -> [Gate] -> [Gate]
 addPartComments bindings part gates = partComment : gates'
   where
-    partComment = Comment "QPU_allocation" False $ [(w,(show $ part M.! w) ++ " qubit") | w <- bound]
+    partComment = Comment "QPU_allocation" False $ [(w,(show $ part M.! w) ++ " QPU") | w <- bound]
     bound = map fst $ filter snd $ M.toList bindings
     gates' = commentOn gates 
     commentOn []     = []
     commentOn (g:gs) = case targetOf g of 
         Just w -> if w `M.member` bindings && w `elem` createdBy g -- Add a comment determining the wire's QPU every time its qubit is initialized.
-          then g : (Comment "QPU_allocation" False [(w, (show $ part M.! w) ++ " qubit")]) : commentOn  gs
+          then g : (Comment "QPU_allocation" False [(w, (show $ part M.! w) ++ " QPU")]) : commentOn  gs
           else g : commentOn gs
         Nothing -> g : commentOn gs    
     createdBy gate = (\(ins,outs) -> filterQbit $ outs \\ ins) $ gate_arity gate

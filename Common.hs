@@ -15,6 +15,7 @@ type KeepCCZ = Bool
 data PartAlg = Kahypar | Patoh
 type PartDir = String
 type SaveTrace = Bool
+type Verbose = Bool
 
 -- For each wire, a list of the hyperedges it 'controls'. Each (n,ws,m,b) is a hyperedge:
 --   ws are the other vertices, pairs (wire,pos), the wire and the position of the CZ, 
