@@ -43,6 +43,7 @@ ignoreLastSeam :: [Segment] -> [Segment]
 ignoreLastSeam (s:[]) = (\(gs,hyp,part,_,id) -> [(gs,hyp,part,Stop,id)]) s 
 ignoreLastSeam (s:ss) = s : ignoreLastSeam ss
 
+-- Rename blocks so that they match optimally between seams.
 matchSegments :: K -> Int -> Matching -> [Segment] -> [Segment]
 matchSegments k nWires prevMatching (s:[]) = updWith prevMatching s : []
 matchSegments k nWires prevMatching (s:ss) = s' : matchSegments k nWires matching ss 
@@ -66,14 +67,15 @@ computeNewSeams nWires (s:ss) = (gs,hyp,part,seam',id) : computeNewSeams nWires 
       Compute -> Value $ getRho nWires s (head ss)
       _       -> seam
 
--- A rational number from 0 to 1. A low value indicates that the two partitions are simiar, so the segments should likely be merged.
+-- A rational number from 0 to 1. A low value indicates that the two partitions are similar, so the segments should likely be merged.
 --    The value is calculated as a weighted sum of the wires that require teleportation, the weight depends on how busy each wire is.
 --    The minimum of the wireHedges/totalHedges ratio between hyp1 and hyp2 of each wire is taken, 
 --      because that is a good estimate of the added cost if the teleportation is not applied
+--    Wires that stay in the same block or don't exist in either of the segments are filtered out by filterStatic
 getRho :: Int -> Segment -> Segment -> Rational
 getRho nWires (_, hyp1, part1,_,_) (_, hyp2, part2,_,_) = sum $ map chooseWeight $ filterStatic [0..nWires-1]
   where
-    filterStatic = filter (\w -> part1 M.! w /= part2 M.! w)
+    filterStatic = filter (\w -> M.member w part1 && M.member w part2 && part1 M.! w /= part2 M.! w)
     chooseWeight w = if hedges w hyp1 < hedges w hyp2 then weight w hyp1 else weight w hyp2
     weight wire hyp = toRational (hedges wire hyp) / toRational (totalHs hyp)
     hedges wire hyp = if M.member wire hyp then length $ hyp M.! wire else 0
@@ -98,7 +100,7 @@ mergeMin toHypergraph toPartition nWires segments = case seamOf $ head segments 
     leftSeg@ (gsLeft, _,partLeft, _,idLeft)  = head afterMin
     rightSeg@(gsRight,_,partRight,_,idRight) = head $ tail afterMin -- Always exists, as there's always another segment after the minimum (i.e. the one it's seam refers to)
     (beforeMin, afterMin, segments') = findValley segments
-    countTeles part1 part2 = length $ filter (\w -> part1 M.! w /= part2 M.! w) [0..nWires-1]
+    countTeles part1 part2 = length $ filter (\w -> M.member w part1 && M.member w part2 && part1 M.! w /= part2 M.! w) [0..nWires-1]
 
 -- Finds the next minimum seam and its surrounding segments up to a peak on the seam value or a stop.
 --    Outputs the segments up to the one with the minimum seam (excluding it), the ones after (including it) up to the end of the valley, and the rest.
@@ -182,7 +184,7 @@ matchPartitionsRec blocks1 part2 heuristic allBlocks matchings = if M.size (fst 
     matchings' = extend best ++ tail matchings -- Only search for the currently best matching
     extend (matching, cost) = [ (M.insert thisBlock b matching, update cost b) 
       | b <- allBlocks \\ M.foldr (:) [] matching ] -- allBlocks - already matched from 'part2'
-    update cost b = cost - heuristic M.! thisBlock + (length $ filter (/= b) $ map (part2 M.!) thisWires) -- substitute estimate with real cost
+    update cost b = cost - heuristic M.! thisBlock + (length $ filter (\b' -> b' /= Nothing && b' /= Just b) $ map (`M.lookup` part2) thisWires) -- substitute estimate with real cost
     (thisBlock, thisWires) = (head . M.toList) $ M.difference blocks1 (fst best) -- Find a block from 'part1' not yet allocated
     sortThem = sortBy (\(_,cost) (_,cost') -> compare cost cost')
 
@@ -190,6 +192,6 @@ matchPartitionsRec blocks1 part2 heuristic allBlocks matchings = if M.size (fst 
 heuristicCost :: Partition' -> Partition -> HCost
 heuristicCost blocks1 part2 = M.mapWithKey hCostFor blocks1
   where
-    hCostFor b ws = if null ws then 0 else length ws - (minimum $ map length $ (group . sort) $ map (part2 M.!) ws)
+    hCostFor b ws = if null ws then 0 else length ws - (minimum $ map length $ (group . sort) $ map (part2 M.!) $ filter (`M.member` part2) ws)
    
 
