@@ -143,7 +143,7 @@ getPartitionIO :: (K,PartAlg,PartDir,SaveTrace,Verbose) -> String -> String -> I
 getPartitionIO (k, algorithm, partDir, saveTrace, verbose) fileData id nSegments = let 
     hypFile  = "temp/hyp_"++id++".hgr"
     partFile = "temp/part_"++id++".hgr"
-    script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++Cfg.epsilon++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -q true"
+    script Kahypar = partDir++"KaHyPar -h "++hypFile++" -k "++show k++" -e "++Cfg.epsilon++" -m direct -o km1 -p "++partDir++Cfg.subalgorithm++" -w true -q true"
     script Patoh = partDir++"PaToH "++hypFile++" "++show k++" FI="++Cfg.epsilon++" UM=O PQ=Q OD=0 PA=13 RA=0 A1=100" -- If extra mem is needed: A1=100
     waitForFile file = doesFileExist file >>= \yes -> if yes then return () else waitForFile file
   in do 

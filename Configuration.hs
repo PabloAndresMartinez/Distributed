@@ -2,13 +2,9 @@ module Distributer.Configuration where
 
 epsilon = "0.01"
 
-cutMetric = "kahypar/config/cut_rb_alenex16.ini" -- This should not be used
-alenex17 = "kahypar/config/km1_direct_kway_alenex17.ini"
-sea17 = "kahypar/config/km1_direct_kway_sea17.ini"
-sea18 = "kahypar/config/km1_direct_kway_sea18.ini"
-gecco18 = "kahypar/config/km1_direct_kway_gecco18.ini" -- Evolutionary Algorith,
+sea20 = "kahypar/config/km1_kKaHyPar_sea20.ini"
 
-subalgorithm = sea18
+subalgorithm = sea20
 
 {- List of available values for circuit:
 
