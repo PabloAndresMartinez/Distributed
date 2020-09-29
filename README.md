@@ -12,6 +12,8 @@ This project uses KaHyPar, which can be downloaded and built from [https://githu
 
 ## How to use
 
+**Virtual machine:** We have released a stable version of our software, with all dependencies installed within a virtual machine. Download it from [http://homepages.inf.ed.ac.uk/s1775899/docs/Stable.ova], then boot it using some VM software (e.g. VirtualBox, VMWare...) and find further instructions within the README file in the machine's Desktop.
+
 **Important:** You will need the executable for KaHyPar in the same directory where `Main` is. Download it from [https://github.com/SebastianSchlag/kahypar] and build it.
 
 Run the script `compile`, this should create the executable for `Main`. Use `./Main --h` to see the list of options. The program must receive as input a circuit in Quipper's ASCII representation (use Quipper's `print_generic ASCII`, for more information read [https://www.mathstat.dal.ca/~selinger/quipper/doc/Quipper-Internal-Printing.html]). If your circuit is in a file, for instance, file `qft20` provided in this repository, you may run:
